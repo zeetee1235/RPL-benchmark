@@ -75,6 +75,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Generate .csc for rpl-benchmark experiments")
     parser.add_argument("--root-dir", required=True, help="Absolute path to rpl-benchmark")
     parser.add_argument("--senders", type=int, default=3, help="Number of sender motes")
+    parser.add_argument("--seed", type=int, default=1, help="Cooja random seed")
     parser.add_argument("--make-routing", default="MAKE_ROUTING_RPL_LITE", help="MAKE_ROUTING value")
     parser.add_argument("--send-interval", type=int, default=10, help="Sender interval seconds")
     parser.add_argument("--sim-time-ms", type=int, default=600000, help="Simulation time in ms")
@@ -117,7 +118,7 @@ def main() -> int:
 <simconf>
   <simulation>
     <title>rpl-benchmark stress RPL + UDP</title>
-    <randomseed>12345</randomseed>
+    <randomseed>{args.seed}</randomseed>
     <motedelay_us>1000000</motedelay_us>
     <radiomedium>
       org.contikios.cooja.radiomediums.UDGM
