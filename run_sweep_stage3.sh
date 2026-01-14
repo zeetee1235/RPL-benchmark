@@ -54,9 +54,16 @@ MODE_LIST=("rpl-classic" "brpl")
 SEEDS=(1 2 3)
 SEND_INTERVAL_LIST=(20 10 5 2)
 
+total=$(( ${#MODE_LIST[@]} * ${#SEND_INTERVAL_LIST[@]} * ${#SEEDS[@]} ))
+count=0
+
 for mode in "${MODE_LIST[@]}"; do
+  make -C "$ROOT_DIR" TARGET=cooja clean
   for interval in "${SEND_INTERVAL_LIST[@]}"; do
     for seed in "${SEEDS[@]}"; do
+      count=$((count + 1))
+      printf "[stage3 %s/%s] mode=%s n=%s seed=%s sr=%s ir=%s si=%s @ %s\n" \
+        "$count" "$total" "$mode" "$SELECTED_N" "$seed" "$SELECTED_SUCCESS" "$SELECTED_INTERFERENCE" "$interval" "$(date '+%F %T')"
       "$ROOT_DIR/run_experiment.sh" \
         --mode "$mode" \
         --stage "$STAGE" \

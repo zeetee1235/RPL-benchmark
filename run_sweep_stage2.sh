@@ -64,11 +64,18 @@ INTERFERENCE_LIST=(1.0 0.95 0.9 0.85)
 SEEDS=(1 2 3)
 SEND_INTERVAL_S="${SEND_INTERVAL_S:-10}"
 
+total=$(( ${#MODE_LIST[@]} * ${#N_LIST[@]} * ${#SUCCESS_LIST[@]} * ${#INTERFERENCE_LIST[@]} * ${#SEEDS[@]} ))
+count=0
+
 for mode in "${MODE_LIST[@]}"; do
+  make -C "$ROOT_DIR" TARGET=cooja clean
   for n in "${N_LIST[@]}"; do
     for success in "${SUCCESS_LIST[@]}"; do
       for interference in "${INTERFERENCE_LIST[@]}"; do
         for seed in "${SEEDS[@]}"; do
+          count=$((count + 1))
+          printf "[stage2 %s/%s] mode=%s n=%s seed=%s sr=%s ir=%s si=%s @ %s\n" \
+            "$count" "$total" "$mode" "$n" "$seed" "$success" "$interference" "$SEND_INTERVAL_S" "$(date '+%F %T')"
           "$ROOT_DIR/run_experiment.sh" \
             --mode "$mode" \
             --stage "$STAGE" \

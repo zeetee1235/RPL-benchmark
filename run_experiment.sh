@@ -118,6 +118,21 @@ if [ -n "$BRPL_FLAG" ]; then
   DEFINES="$DEFINES $BRPL_FLAG"
 fi
 
+BUILD_DIR="$ROOT_DIR/build/cooja"
+BUILD_CONFIG_FILE="$BUILD_DIR/.build_config"
+CURRENT_BUILD_CONFIG="MAKE_ROUTING=$MAKE_ROUTING DEFINES=$DEFINES"
+if [ -f "$BUILD_CONFIG_FILE" ]; then
+  PREV_BUILD_CONFIG="$(cat "$BUILD_CONFIG_FILE")"
+else
+  PREV_BUILD_CONFIG=""
+fi
+if [ "$PREV_BUILD_CONFIG" != "$CURRENT_BUILD_CONFIG" ]; then
+  make -C "$ROOT_DIR" TARGET=cooja clean
+  mkdir -p "$BUILD_DIR"
+fi
+mkdir -p "$BUILD_DIR"
+echo "$CURRENT_BUILD_CONFIG" > "$BUILD_CONFIG_FILE"
+
 make -C "$ROOT_DIR" TARGET=cooja receiver_root.cooja sender.cooja \
   MAKE_ROUTING="$MAKE_ROUTING" DEFINES="$DEFINES"
 

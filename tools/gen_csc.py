@@ -114,6 +114,8 @@ def main() -> int:
     if args.brpl:
         defines += " BRPL_MODE=1"
 
+    defines_arg = defines.replace(" ", ",") if defines else ""
+
     csc = f"""<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 <simconf>
   <simulation>
@@ -135,7 +137,7 @@ def main() -> int:
       <identifier>root</identifier>
       <description>Receiver Root</description>
       <source>{root_dir}/receiver_root.c</source>
-      <commands>make -C {root_dir} receiver_root.cooja TARGET=cooja MAKE_ROUTING={args.make_routing} DEFINES=\"{defines}\"</commands>
+      <commands>make -C {root_dir} receiver_root.cooja TARGET=cooja MAKE_ROUTING={args.make_routing} DEFINES={defines_arg}</commands>
       <moteinterface>org.contikios.cooja.interfaces.Position</moteinterface>
       <moteinterface>org.contikios.cooja.interfaces.Battery</moteinterface>
       <moteinterface>org.contikios.cooja.contikimote.interfaces.ContikiVib</moteinterface>
@@ -159,7 +161,7 @@ def main() -> int:
       <identifier>sender</identifier>
       <description>Sensor Sender</description>
       <source>{root_dir}/sender.c</source>
-      <commands>make -C {root_dir} sender.cooja TARGET=cooja MAKE_ROUTING={args.make_routing} DEFINES=\"{defines}\"</commands>
+      <commands>make -C {root_dir} sender.cooja TARGET=cooja MAKE_ROUTING={args.make_routing} DEFINES={defines_arg}</commands>
       <moteinterface>org.contikios.cooja.interfaces.Position</moteinterface>
       <moteinterface>org.contikios.cooja.interfaces.Battery</moteinterface>
       <moteinterface>org.contikios.cooja.contikimote.interfaces.ContikiVib</moteinterface>
