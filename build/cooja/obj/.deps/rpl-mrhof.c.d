@@ -1,8 +1,7 @@
 build/cooja/obj/rpl-mrhof.o: \
- /home/dev/WSN-IoT-lab/external/contiki-ng/os/net/routing/rpl-lite/rpl-mrhof.c \
- /home/dev/WSN-IoT-lab/external/contiki-ng/os/net/routing/rpl-lite/rpl.h \
- /home/dev/WSN-IoT-lab/external/contiki-ng/os/net/ipv6/uip.h \
- /home/dev/WSN-IoT-lab/external/contiki-ng/os/net/ipv6/uipopt.h \
+ /home/dev/WSN-IoT-lab/external/contiki-ng/os/net/routing/rpl-classic/rpl-mrhof.c \
+ /home/dev/WSN-IoT-lab/external/contiki-ng/os/net/routing/rpl-classic/rpl.h \
+ /home/dev/WSN-IoT-lab/external/contiki-ng/os/net/routing/rpl-classic/rpl-conf.h \
  /home/dev/WSN-IoT-lab/external/contiki-ng/os/contiki.h \
  /home/dev/WSN-IoT-lab/external/contiki-ng/arch/platform/cooja/./contiki-conf.h \
  project-conf.h \
@@ -26,23 +25,21 @@ build/cooja/obj/rpl-mrhof.o: \
  /home/dev/WSN-IoT-lab/external/contiki-ng/arch/platform/cooja/./sys/cooja_mt.h \
  /home/dev/WSN-IoT-lab/external/contiki-ng/os/sys/pt.h \
  /home/dev/WSN-IoT-lab/external/contiki-ng/os/sys/clock.h \
- /home/dev/WSN-IoT-lab/external/contiki-ng/os/net/ipv6/uipbuf.h \
- /home/dev/WSN-IoT-lab/external/contiki-ng/os/net/linkaddr.h \
- /home/dev/WSN-IoT-lab/external/contiki-ng/os/net/ipv6/tcpip.h \
- /home/dev/WSN-IoT-lab/external/contiki-ng/os/net/routing/rpl-lite/rpl-const.h \
- /home/dev/WSN-IoT-lab/external/contiki-ng/os/net/routing/rpl-lite/rpl-conf.h \
- /home/dev/WSN-IoT-lab/external/contiki-ng/os/net/routing/rpl-lite/rpl-types.h \
- /home/dev/WSN-IoT-lab/external/contiki-ng/os/net/routing/rpl-lite/rpl-icmp6.h \
- /home/dev/WSN-IoT-lab/external/contiki-ng/os/net/ipv6/uip.h \
- /home/dev/WSN-IoT-lab/external/contiki-ng/os/net/ipv6/uip-ds6.h \
  /home/dev/WSN-IoT-lab/external/contiki-ng/os/net/ipv6/multicast/uip-mcast6.h \
  /home/dev/WSN-IoT-lab/external/contiki-ng/os/net/ipv6/multicast/uip-mcast6-engines.h \
  /home/dev/WSN-IoT-lab/external/contiki-ng/os/net/ipv6/multicast/uip-mcast6-route.h \
+ /home/dev/WSN-IoT-lab/external/contiki-ng/os/net/ipv6/uip.h \
+ /home/dev/WSN-IoT-lab/external/contiki-ng/os/net/ipv6/uipopt.h \
+ /home/dev/WSN-IoT-lab/external/contiki-ng/os/net/ipv6/uipbuf.h \
+ /home/dev/WSN-IoT-lab/external/contiki-ng/os/net/linkaddr.h \
+ /home/dev/WSN-IoT-lab/external/contiki-ng/os/net/ipv6/tcpip.h \
  /home/dev/WSN-IoT-lab/external/contiki-ng/os/net/ipv6/multicast/smrf.h \
  /home/dev/WSN-IoT-lab/external/contiki-ng/os/net/ipv6/multicast/esmrf.h \
  /home/dev/WSN-IoT-lab/external/contiki-ng/os/net/ipv6/multicast/roll-tm.h \
  /home/dev/WSN-IoT-lab/external/contiki-ng/os/net/ipv6/multicast/uip-mcast6-stats.h \
  /home/dev/WSN-IoT-lab/external/contiki-ng/os/net/ipv6/multicast/mpl.h \
+ /home/dev/WSN-IoT-lab/external/contiki-ng/os/lib/list.h \
+ /home/dev/WSN-IoT-lab/external/contiki-ng/os/net/ipv6/uip-ds6.h \
  /home/dev/WSN-IoT-lab/external/contiki-ng/os/sys/stimer.h \
  /home/dev/WSN-IoT-lab/external/contiki-ng/os/net/ipv6/uip-nd6.h \
  /home/dev/WSN-IoT-lab/external/contiki-ng/os/net/ipv6/uip-ds6-nbr.h \
@@ -54,20 +51,12 @@ build/cooja/obj/rpl-mrhof.o: \
  /home/dev/WSN-IoT-lab/external/contiki-ng/os/net/ipv6/uip-packetqueue.h \
  /home/dev/WSN-IoT-lab/external/contiki-ng/os/sys/ctimer.h \
  /home/dev/WSN-IoT-lab/external/contiki-ng/os/net/ipv6/uip-ds6-route.h \
- /home/dev/WSN-IoT-lab/external/contiki-ng/os/lib/list.h \
- /home/dev/WSN-IoT-lab/external/contiki-ng/os/net/ipv6/uip-ds6-nbr.h \
- /home/dev/WSN-IoT-lab/external/contiki-ng/os/net/routing/rpl-lite/rpl-dag.h \
- /home/dev/WSN-IoT-lab/external/contiki-ng/os/net/routing/rpl-lite/rpl-dag-root.h \
- /home/dev/WSN-IoT-lab/external/contiki-ng/os/net/routing/rpl-lite/rpl-neighbor.h \
- /home/dev/WSN-IoT-lab/external/contiki-ng/os/net/ipv6/uip-ds6.h \
- /home/dev/WSN-IoT-lab/external/contiki-ng/os/net/routing/rpl-lite/rpl-ext-header.h \
- /home/dev/WSN-IoT-lab/external/contiki-ng/os/net/routing/rpl-lite/rpl-timers.h \
+ /home/dev/WSN-IoT-lab/external/contiki-ng/os/net/routing/rpl-classic/rpl-private.h \
  /home/dev/WSN-IoT-lab/external/contiki-ng/os/net/link-stats.h \
  /home/dev/WSN-IoT-lab/external/contiki-ng/os/sys/log.h \
  /home/dev/WSN-IoT-lab/external/contiki-ng/os/sys/log-conf.h
-/home/dev/WSN-IoT-lab/external/contiki-ng/os/net/routing/rpl-lite/rpl.h:
-/home/dev/WSN-IoT-lab/external/contiki-ng/os/net/ipv6/uip.h:
-/home/dev/WSN-IoT-lab/external/contiki-ng/os/net/ipv6/uipopt.h:
+/home/dev/WSN-IoT-lab/external/contiki-ng/os/net/routing/rpl-classic/rpl.h:
+/home/dev/WSN-IoT-lab/external/contiki-ng/os/net/routing/rpl-classic/rpl-conf.h:
 /home/dev/WSN-IoT-lab/external/contiki-ng/os/contiki.h:
 /home/dev/WSN-IoT-lab/external/contiki-ng/arch/platform/cooja/./contiki-conf.h:
 project-conf.h:
@@ -91,23 +80,21 @@ project-conf.h:
 /home/dev/WSN-IoT-lab/external/contiki-ng/arch/platform/cooja/./sys/cooja_mt.h:
 /home/dev/WSN-IoT-lab/external/contiki-ng/os/sys/pt.h:
 /home/dev/WSN-IoT-lab/external/contiki-ng/os/sys/clock.h:
-/home/dev/WSN-IoT-lab/external/contiki-ng/os/net/ipv6/uipbuf.h:
-/home/dev/WSN-IoT-lab/external/contiki-ng/os/net/linkaddr.h:
-/home/dev/WSN-IoT-lab/external/contiki-ng/os/net/ipv6/tcpip.h:
-/home/dev/WSN-IoT-lab/external/contiki-ng/os/net/routing/rpl-lite/rpl-const.h:
-/home/dev/WSN-IoT-lab/external/contiki-ng/os/net/routing/rpl-lite/rpl-conf.h:
-/home/dev/WSN-IoT-lab/external/contiki-ng/os/net/routing/rpl-lite/rpl-types.h:
-/home/dev/WSN-IoT-lab/external/contiki-ng/os/net/routing/rpl-lite/rpl-icmp6.h:
-/home/dev/WSN-IoT-lab/external/contiki-ng/os/net/ipv6/uip.h:
-/home/dev/WSN-IoT-lab/external/contiki-ng/os/net/ipv6/uip-ds6.h:
 /home/dev/WSN-IoT-lab/external/contiki-ng/os/net/ipv6/multicast/uip-mcast6.h:
 /home/dev/WSN-IoT-lab/external/contiki-ng/os/net/ipv6/multicast/uip-mcast6-engines.h:
 /home/dev/WSN-IoT-lab/external/contiki-ng/os/net/ipv6/multicast/uip-mcast6-route.h:
+/home/dev/WSN-IoT-lab/external/contiki-ng/os/net/ipv6/uip.h:
+/home/dev/WSN-IoT-lab/external/contiki-ng/os/net/ipv6/uipopt.h:
+/home/dev/WSN-IoT-lab/external/contiki-ng/os/net/ipv6/uipbuf.h:
+/home/dev/WSN-IoT-lab/external/contiki-ng/os/net/linkaddr.h:
+/home/dev/WSN-IoT-lab/external/contiki-ng/os/net/ipv6/tcpip.h:
 /home/dev/WSN-IoT-lab/external/contiki-ng/os/net/ipv6/multicast/smrf.h:
 /home/dev/WSN-IoT-lab/external/contiki-ng/os/net/ipv6/multicast/esmrf.h:
 /home/dev/WSN-IoT-lab/external/contiki-ng/os/net/ipv6/multicast/roll-tm.h:
 /home/dev/WSN-IoT-lab/external/contiki-ng/os/net/ipv6/multicast/uip-mcast6-stats.h:
 /home/dev/WSN-IoT-lab/external/contiki-ng/os/net/ipv6/multicast/mpl.h:
+/home/dev/WSN-IoT-lab/external/contiki-ng/os/lib/list.h:
+/home/dev/WSN-IoT-lab/external/contiki-ng/os/net/ipv6/uip-ds6.h:
 /home/dev/WSN-IoT-lab/external/contiki-ng/os/sys/stimer.h:
 /home/dev/WSN-IoT-lab/external/contiki-ng/os/net/ipv6/uip-nd6.h:
 /home/dev/WSN-IoT-lab/external/contiki-ng/os/net/ipv6/uip-ds6-nbr.h:
@@ -119,14 +106,7 @@ project-conf.h:
 /home/dev/WSN-IoT-lab/external/contiki-ng/os/net/ipv6/uip-packetqueue.h:
 /home/dev/WSN-IoT-lab/external/contiki-ng/os/sys/ctimer.h:
 /home/dev/WSN-IoT-lab/external/contiki-ng/os/net/ipv6/uip-ds6-route.h:
-/home/dev/WSN-IoT-lab/external/contiki-ng/os/lib/list.h:
-/home/dev/WSN-IoT-lab/external/contiki-ng/os/net/ipv6/uip-ds6-nbr.h:
-/home/dev/WSN-IoT-lab/external/contiki-ng/os/net/routing/rpl-lite/rpl-dag.h:
-/home/dev/WSN-IoT-lab/external/contiki-ng/os/net/routing/rpl-lite/rpl-dag-root.h:
-/home/dev/WSN-IoT-lab/external/contiki-ng/os/net/routing/rpl-lite/rpl-neighbor.h:
-/home/dev/WSN-IoT-lab/external/contiki-ng/os/net/ipv6/uip-ds6.h:
-/home/dev/WSN-IoT-lab/external/contiki-ng/os/net/routing/rpl-lite/rpl-ext-header.h:
-/home/dev/WSN-IoT-lab/external/contiki-ng/os/net/routing/rpl-lite/rpl-timers.h:
+/home/dev/WSN-IoT-lab/external/contiki-ng/os/net/routing/rpl-classic/rpl-private.h:
 /home/dev/WSN-IoT-lab/external/contiki-ng/os/net/link-stats.h:
 /home/dev/WSN-IoT-lab/external/contiki-ng/os/sys/log.h:
 /home/dev/WSN-IoT-lab/external/contiki-ng/os/sys/log-conf.h:

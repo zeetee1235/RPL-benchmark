@@ -1,31 +1,126 @@
-[A] 시뮬레이션 목표 요약
-- RPL 기반 네트워크에서 receiver(root)가 UDP 수신을 담당하고 CSV 로그를 남긴다.
-- 노드 수 증가 및 링크 품질 저하로 RPL 한계 조건을 유도한다.
-- BRPL 모드와 RPL 모드를 동일 조건에서 비교 가능한 데이터셋으로 정리한다.
+# RPL vs BRPL 스트레스 실험 (Cooja, headless)
 
-[B] 네트워크 구성 초안
-- 노드 종류와 역할: Root+Receiver 1, Sensor Sender N.
-- 토폴로지: UDGM, 고정 좌표 그리드(재현성), Tx/Interference/Success ratio 파라미터화.
-- 프로토콜 스택: IPv6 + UDP + RPL/BRPL (BRPL 모드는 OF 교체).
+이 저장소는 **RPL 붕괴 시점(collapse point)**을 찾고 동일 조건에서 BRPL과 비교하기 위한 3단계 스트레스 테스트를 자동화합니다. 모든 시뮬레이션은 `cooja.jar -nogui=<file.csc>`로 headless 실행됩니다.
 
-[C] 코드 구조 (파일 단위)
-- receiver_root.c: RPL root 설정 + UDP 수신 + CSV 로그 출력.
-- sender.c: 10초 주기 UDP 송신(컴파일 매크로 SEND_INTERVAL_SECONDS로 변경 가능).
-- brpl-of.c: BRPL 모드에서 사용되는 objective function(큐 점유율 기반 penalty).
-- project-conf.h: BRPL 모드 매크로와 로그 레벨 설정.
+## 빠른 시작
 
-[D] Cooja/CLI 실행 구성
-- make 명령어: make -C rpl-benchmark TARGET=cooja receiver_root.cooja sender.cooja MAKE_ROUTING=...
-- .csc 구성 개요: tools/gen_csc.py가 노드 수/전파 파라미터를 반영해 brpl_stress.csc 생성.
-- nogui 실행: run_experiment.sh 또는 run_sweep.sh가 java -jar cooja.jar -nogui=... 호출.
+```bash
+# Stage 1: N 스윕
+./run_sweep_stage1.sh
 
-[E] 실험 자동화 설계
-- run_experiment.sh: MODE(rpl-lite/rpl-classic/brpl)와 SENDERS 인자를 받아 1회 실행.
-- run_sweep.sh: 노드 수를 늘리며 반복 실행, summary.csv 자동 누적.
-- tools/python/log_parser.py: CSV 로그를 읽어 summary.csv로 집계.
+# Stage 2: 링크 품질 스윕 (stage 1에서 N 값 2개 자동 선택)
+./run_sweep_stage2.sh
 
-[F] 수집 지표 & 로그 포맷
-- CSV 로그 포맷: CSV,RX,src_ip,src_port,seq,t_send,t_recv,delay_ticks,len,gap
-- PDR: gap 기반 결손 + 수신 수로 계산.
-- end-to-end delay: delay_ticks → 실시간 변환.
-- RPL 제어 트래픽: LOG_CONF_LEVEL_RPL 조정 후 DIO/DAO 카운트 가능.
+# Stage 3: 트래픽 스윕 (stage 2에서 knee 조건 자동 선택)
+./run_sweep_stage3.sh
+```
+
+## 시뮬레이션 규칙 (재현성)
+
+* 총 시간: **360s** (WARMUP=60s, MEASURE=300s)
+* 지표는 MEASURE 구간만 사용
+* 각 실행은 **seed**를 받아 동일 실행 재현 가능
+* 로그는 `receiver_root.c`에서 출력하는 고정 CSV 포맷을 파싱
+
+## 출력 구조
+
+```
+results/
+  raw/<stage>/<mode>/Nxx_seedY_srX_irZ_siT.{csc,log,csv}
+  summary.csv
+  thresholds.csv
+```
+
+* `raw/...csv`는 해당 실행의 RX CSV 라인만 포함
+* `summary.csv`는 실행별 지표
+* `thresholds.csv`는 `tools/python/find_thresholds.py`가 자동 생성
+
+## 실행별 요약 컬럼
+
+`summary.csv` 컬럼:
+
+```
+mode,stage,n_senders,seed,success_ratio,interference_ratio,send_interval_s,
+rx_count,tx_expected,pdr,avg_delay_ms,p95_delay_ms,dio_count,dao_count,
+duration_s,warmup_s,measure_s,log_path,csc_path
+```
+
+참고:
+* `dio_count`/`dao_count`는 전체 Cooja 로그에서 best-effort로 집계
+* 지연 값은 `CLOCK_SECOND`(기본 128)으로 변환
+
+## 단계 정의
+
+### Stage 1: N 스윕
+
+* 고정: `SUCCESS_RATIO=1.0`, `INTERFERENCE_RATIO=1.0`, `SEND_INTERVAL_S=10`
+* N 스윕: `{5,10,15,20,25,30,40,50}`
+* Seeds: `{1,2,3}`
+* Modes: `{rpl-classic, brpl}`
+
+### Stage 2: 링크 품질 스윕
+
+Stage 1의 **RPL classic** 결과로부터 N 값 2개를 자동 선택:
+
+* **Stable N:** `PDR >= 0.95`를 만족하는 가장 큰 N
+* **Marginal N:** `0.90 <= PDR < 0.95`를 만족하는 가장 큰 N
+* Marginal N이 없으면 stable N 위의 다음 N 사용 (없으면 stable N)
+
+스윕 파라미터:
+
+* `SUCCESS_RATIO ∈ {1.0,0.95,0.9,0.85,0.8,0.75}`
+* `INTERFERENCE_RATIO ∈ {1.0,0.95,0.9,0.85}`
+* Seeds `{1,2,3}`, Modes `{rpl-classic, brpl}`
+
+### Stage 3: 트래픽 스윕
+
+Stage 2의 **RPL classic** 결과에서 **knee** 조건 선택:
+
+* `0.85 <= PDR <= 0.92`인 조건이 있으면 **0.90에 가장 가까운** 조건 선택
+* 없으면 PDR이 **0.90에 가장 가까운** 조건 선택
+
+스윕 파라미터:
+
+* `SEND_INTERVAL_S ∈ {20,10,5,2}` (내림차순)
+* Seeds `{1,2,3}`, Modes `{rpl-classic, brpl}`
+
+## 붕괴 시점 탐지
+
+`tools/python/find_thresholds.py`는 `summary.csv`를 조건별로 집계해 모드/스테이지별 첫 붕괴 지점을 찾습니다:
+
+* `PDR < 0.90` **또는** `avg_delay_ms > 5000`
+* **또는** 제어 오버헤드 급증 (`DIO+DAO`가 이전 조건의 2배 이상일 때)
+
+스윕 순서:
+
+* Stage 1: N 증가
+* Stage 2: success_ratio ↓ 다음 interference_ratio ↓
+* Stage 3: send_interval_s ↓
+
+## 단일 실험 실행
+
+```bash
+./run_experiment.sh \
+  --mode rpl-classic \
+  --stage stage1 \
+  --n-senders 20 \
+  --seed 1 \
+  --success-ratio 1.0 \
+  --interference-ratio 1.0 \
+  --send-interval 10
+```
+
+### 선택적 환경 변수 오버라이드
+
+* `CONTIKI`: Contiki-NG 루트 경로
+* `DURATION_S`, `WARMUP_S`, `MEASURE_S`
+* `TX_RANGE`, `INT_RANGE`
+* `CLOCK_SECOND`
+* `SIM_TIMEOUT_S`
+
+## 참고
+
+* 필요 시 Cooja 빌드:
+  ```bash
+  (cd $CONTIKI/tools/cooja && ./gradlew jar)
+  ```

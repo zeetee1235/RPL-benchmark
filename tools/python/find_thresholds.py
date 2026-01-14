@@ -11,7 +11,7 @@ from pathlib import Path
 from statistics import mean
 
 
-@dataclass
+@dataclass(frozen=True)
 class Condition:
     mode: str
     stage: str

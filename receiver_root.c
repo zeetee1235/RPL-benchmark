@@ -26,9 +26,15 @@
 #define LOG_LEVEL LOG_LEVEL_INFO
 
 #define UDP_PORT 8765
+#define SYNC_PORT 8766
+#define SYNC_INTERVAL_SECONDS 2
+#define SYNC_INTERVAL (SYNC_INTERVAL_SECONDS * CLOCK_SECOND)
 #define MAX_SENDERS 16
 
 static struct simple_udp_connection udp_conn;
+static struct simple_udp_connection sync_conn;
+static struct etimer sync_timer;
+static uip_ipaddr_t sync_addr;
 
 typedef struct {
   uip_ipaddr_t ip;
@@ -172,8 +178,20 @@ PROCESS_THREAD(receiver_root_process, ev, data)
   simple_udp_register(&udp_conn, UDP_PORT, NULL, UDP_PORT, udp_rx_callback);
   LOG_INFO("UDP receiver listening on %u\n", UDP_PORT);
 
+  /* Periodic time sync beacon for senders. */
+  uip_create_linklocal_allnodes_mcast(&sync_addr);
+  simple_udp_register(&sync_conn, SYNC_PORT, NULL, SYNC_PORT, NULL);
+  etimer_set(&sync_timer, SYNC_INTERVAL);
+
   while(1) {
-    PROCESS_YIELD();
+    PROCESS_WAIT_EVENT();
+    if(etimer_expired(&sync_timer)) {
+      char buf[32];
+      uint32_t t_root = (uint32_t)clock_time();
+      snprintf(buf, sizeof(buf), "SYNC t=%lu", (unsigned long)t_root);
+      simple_udp_sendto(&sync_conn, buf, strlen(buf), &sync_addr);
+      etimer_reset(&sync_timer);
+    }
   }
 
   PROCESS_END();

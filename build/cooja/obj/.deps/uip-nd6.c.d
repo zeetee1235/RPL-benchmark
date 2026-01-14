@@ -50,6 +50,7 @@ build/cooja/obj/uip-nd6.o: \
  /home/dev/WSN-IoT-lab/external/contiki-ng/os/sys/ctimer.h \
  /home/dev/WSN-IoT-lab/external/contiki-ng/os/net/ipv6/uip-ds6-route.h \
  /home/dev/WSN-IoT-lab/external/contiki-ng/os/lib/list.h \
+ /home/dev/WSN-IoT-lab/external/contiki-ng/os/net/routing/rpl-classic/rpl-conf.h \
  /home/dev/WSN-IoT-lab/external/contiki-ng/os/net/ipv6/uip-nameserver.h \
  /home/dev/WSN-IoT-lab/external/contiki-ng/os/lib/random.h \
  /home/dev/WSN-IoT-lab/external/contiki-ng/os/sys/log.h \
@@ -104,6 +105,7 @@ project-conf.h:
 /home/dev/WSN-IoT-lab/external/contiki-ng/os/sys/ctimer.h:
 /home/dev/WSN-IoT-lab/external/contiki-ng/os/net/ipv6/uip-ds6-route.h:
 /home/dev/WSN-IoT-lab/external/contiki-ng/os/lib/list.h:
+/home/dev/WSN-IoT-lab/external/contiki-ng/os/net/routing/rpl-classic/rpl-conf.h:
 /home/dev/WSN-IoT-lab/external/contiki-ng/os/net/ipv6/uip-nameserver.h:
 /home/dev/WSN-IoT-lab/external/contiki-ng/os/lib/random.h:
 /home/dev/WSN-IoT-lab/external/contiki-ng/os/sys/log.h:

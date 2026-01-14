@@ -105,8 +105,11 @@ mkdir -p "$RAW_DIR"
 BASENAME="N${N_SENDERS}_seed${SEED}_sr${SUCCESS_TAG}_ir${INTERFERENCE_TAG}_si${INTERVAL_TAG}"
 CSC_PATH="$RAW_DIR/${BASENAME}.csc"
 LOG_PATH="$RAW_DIR/${BASENAME}.log"
+STDOUT_LOG_PATH="$RAW_DIR/${BASENAME}.stdout.log"
 CSV_PATH="$RAW_DIR/${BASENAME}.csv"
 SUMMARY_PATH="$RESULTS_DIR/summary.csv"
+COOJA_LOGDIR="$RAW_DIR"
+COOJA_TESTLOG="$COOJA_LOGDIR/COOJA.testlog"
 
 SIM_TIME_MS=$((DURATION_S * 1000))
 
@@ -133,21 +136,28 @@ python3 "$ROOT_DIR/tools/gen_csc.py" \
   --out "$CSC_PATH"
 
 set +e
+rm -f "$COOJA_TESTLOG"
 if command -v timeout >/dev/null 2>&1; then
-  timeout "$SIM_TIMEOUT_S" java --enable-preview -jar "$COOJA_JAR" -nogui="$CSC_PATH" > "$LOG_PATH" 2>&1
+  timeout "$SIM_TIMEOUT_S" java --enable-preview -jar "$COOJA_JAR" --no-gui --autostart --logdir "$COOJA_LOGDIR" "$CSC_PATH" > "$STDOUT_LOG_PATH" 2>&1
   COOJA_STATUS=$?
 else
-  java --enable-preview -jar "$COOJA_JAR" -nogui="$CSC_PATH" > "$LOG_PATH" 2>&1
+  java --enable-preview -jar "$COOJA_JAR" --no-gui --autostart --logdir "$COOJA_LOGDIR" "$CSC_PATH" > "$STDOUT_LOG_PATH" 2>&1
   COOJA_STATUS=$?
 fi
 set -e
+
+if [ -f "$COOJA_TESTLOG" ]; then
+  mv "$COOJA_TESTLOG" "$LOG_PATH"
+else
+  cp "$STDOUT_LOG_PATH" "$LOG_PATH"
+fi
 
 if [ $COOJA_STATUS -ne 0 ]; then
   echo "Cooja run failed (status $COOJA_STATUS) for $BASENAME" >&2
 fi
 
-if rg '^CSV,' "$LOG_PATH" > "$CSV_PATH"; then
-  :
+if rg 'CSV,' "$LOG_PATH" >/dev/null 2>&1; then
+  rg 'CSV,' "$LOG_PATH" | sed -E 's/^.* CSV,/CSV,/' > "$CSV_PATH"
 else
   echo "" > "$CSV_PATH"
 fi

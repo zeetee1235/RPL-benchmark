@@ -1,0 +1,36 @@
+# Build artifacts
+build/
+*.o
+*.cooja
+*.a
+*.so
+
+# Logs
+logs/*.log
+COOJA.testlog
+
+# Results
+results/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.venv/
+venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.bak

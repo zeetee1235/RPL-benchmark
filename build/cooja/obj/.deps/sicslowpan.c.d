@@ -50,6 +50,7 @@ build/cooja/obj/sicslowpan.o: \
  /home/dev/WSN-IoT-lab/external/contiki-ng/os/sys/ctimer.h \
  /home/dev/WSN-IoT-lab/external/contiki-ng/os/net/ipv6/uip-ds6-route.h \
  /home/dev/WSN-IoT-lab/external/contiki-ng/os/lib/list.h \
+ /home/dev/WSN-IoT-lab/external/contiki-ng/os/net/routing/rpl-classic/rpl-conf.h \
  /home/dev/WSN-IoT-lab/external/contiki-ng/os/net/ipv6/sicslowpan.h \
  /home/dev/WSN-IoT-lab/external/contiki-ng/os/net/mac/framer/frame802154.h \
  /home/dev/WSN-IoT-lab/external/contiki-ng/os/net/packetbuf.h \
@@ -111,6 +112,7 @@ project-conf.h:
 /home/dev/WSN-IoT-lab/external/contiki-ng/os/sys/ctimer.h:
 /home/dev/WSN-IoT-lab/external/contiki-ng/os/net/ipv6/uip-ds6-route.h:
 /home/dev/WSN-IoT-lab/external/contiki-ng/os/lib/list.h:
+/home/dev/WSN-IoT-lab/external/contiki-ng/os/net/routing/rpl-classic/rpl-conf.h:
 /home/dev/WSN-IoT-lab/external/contiki-ng/os/net/ipv6/sicslowpan.h:
 /home/dev/WSN-IoT-lab/external/contiki-ng/os/net/mac/framer/frame802154.h:
 /home/dev/WSN-IoT-lab/external/contiki-ng/os/net/packetbuf.h:
