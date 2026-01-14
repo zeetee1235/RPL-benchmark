@@ -1,88 +1,140 @@
 #!/usr/bin/env python3
-"""Parse rpl-benchmark CSV logs and append a summary row."""
+"""Parse raw RX CSV logs and append a per-run summary row."""
 
 from __future__ import annotations
 
 import argparse
-from collections import defaultdict
+import csv
+import math
+import re
 from pathlib import Path
+from statistics import mean
 
 
-def parse_log(path: Path) -> dict:
-    stats = defaultdict(lambda: {"rx": 0, "gap": 0, "delay_sum": 0, "delay_cnt": 0})
+def parse_rx_csv(
+    path: Path,
+    warmup_s: float,
+    measure_s: float,
+    clock_second: int,
+) -> dict:
+    stats = {}
+    delays_ms: list[float] = []
+    rx_total = 0
+    gap_total = 0
 
-    for line in path.read_text(errors="ignore").splitlines():
-        if not line.startswith("CSV,RX,"):
-            continue
-        parts = line.strip().split(",")
-        if len(parts) < 10:
-            continue
-        _, _, src_ip, _, seq, _t_send, _t_recv, delay_ticks, _len, gap = parts[:10]
-        if seq == "NA":
-            continue
-        st = stats[src_ip]
-        st["rx"] += 1
-        st["gap"] += int(gap)
-        st["delay_sum"] += int(delay_ticks)
-        st["delay_cnt"] += 1
+    if not path.exists():
+        return {
+            "rx": 0,
+            "expected": 0,
+            "pdr": 0.0,
+            "avg_delay_ms": 0.0,
+            "p95_delay_ms": 0.0,
+        }
 
-    total_rx = 0
-    total_expected = 0
-    total_delay_sum = 0
-    total_delay_cnt = 0
+    with path.open("r", encoding="utf-8", errors="ignore") as handle:
+        reader = csv.reader(handle)
+        for row in reader:
+            if len(row) < 10:
+                continue
+            if row[0] != "CSV" or row[1] != "RX":
+                continue
+            _, _, src_ip, _src_port, seq, _t_send, t_recv, delay_ticks, _length, gap = row[:10]
+            if seq == "NA":
+                continue
+            try:
+                t_recv_ticks = int(t_recv)
+                delay_ticks_int = int(delay_ticks)
+                gap_int = int(gap)
+            except ValueError:
+                continue
+            t_recv_s = t_recv_ticks / clock_second
+            if t_recv_s < warmup_s or t_recv_s >= warmup_s + measure_s:
+                continue
 
-    for st in stats.values():
-        expected = st["rx"] + st["gap"]
-        total_rx += st["rx"]
-        total_expected += expected
-        total_delay_sum += st["delay_sum"]
-        total_delay_cnt += st["delay_cnt"]
+            sender = stats.setdefault(src_ip, {"rx": 0, "gap": 0})
+            sender["rx"] += 1
+            sender["gap"] += gap_int
 
-    pdr = (total_rx / total_expected) if total_expected else 0.0
-    avg_delay = (total_delay_sum / total_delay_cnt) if total_delay_cnt else 0.0
+            rx_total += 1
+            gap_total += gap_int
+            delays_ms.append((delay_ticks_int * 1000.0) / clock_second)
+
+    expected = rx_total + gap_total
+    pdr = (rx_total / expected) if expected else 0.0
+    avg_delay_ms = mean(delays_ms) if delays_ms else 0.0
+    if delays_ms:
+        delays_sorted = sorted(delays_ms)
+        p95_index = max(0, math.ceil(0.95 * len(delays_sorted)) - 1)
+        p95_delay_ms = delays_sorted[p95_index]
+    else:
+        p95_delay_ms = 0.0
 
     return {
-        "rx": total_rx,
-        "expected": total_expected,
+        "rx": rx_total,
+        "expected": expected,
         "pdr": pdr,
-        "avg_delay_ticks": avg_delay,
-        "senders_seen": len(stats),
+        "avg_delay_ms": avg_delay_ms,
+        "p95_delay_ms": p95_delay_ms,
     }
+
+
+def count_control_messages(log_path: Path) -> tuple[int, int]:
+    if not log_path.exists():
+        return 0, 0
+    text = log_path.read_text(errors="ignore")
+    dio_count = len(re.findall(r"\bDIO\b", text))
+    dao_count = len(re.findall(r"\bDAO\b", text))
+    return dio_count, dao_count
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Parse RX CSV logs and summarize")
-    parser.add_argument("--log", required=True, help="Cooja log file path")
+    parser.add_argument("--csv", required=True, help="Raw RX CSV path")
+    parser.add_argument("--cooja-log", required=False, help="Full Cooja log path")
     parser.add_argument("--mode", required=True, help="Experiment mode label")
-    parser.add_argument("--senders", type=int, required=True, help="Configured sender count")
-    parser.add_argument("--send-interval", type=int, required=True, help="Sender interval seconds")
-    parser.add_argument("--sim-time-ms", type=int, required=True, help="Simulation time ms")
-    parser.add_argument("--tx-range", required=True, help="UDGM transmit range")
-    parser.add_argument("--success-tx", required=True, help="UDGM success_ratio_tx")
-    parser.add_argument("--success-rx", required=True, help="UDGM success_ratio_rx")
+    parser.add_argument("--stage", required=True, help="Stage label")
+    parser.add_argument("--n-senders", type=int, required=True, help="Configured sender count")
+    parser.add_argument("--seed", type=int, required=True, help="Random seed")
+    parser.add_argument("--success-ratio", type=float, required=True, help="UDGM success_ratio_tx/rx")
+    parser.add_argument("--interference-ratio", type=float, required=True, help="UDGM interference ratio")
+    parser.add_argument("--send-interval-s", type=int, required=True, help="Sender interval seconds")
+    parser.add_argument("--duration-s", type=int, required=True, help="Simulation duration seconds")
+    parser.add_argument("--warmup-s", type=int, required=True, help="Warmup seconds")
+    parser.add_argument("--measure-s", type=int, required=True, help="Measure seconds")
+    parser.add_argument("--clock-second", type=int, default=128, help="Contiki clock ticks per second")
+    parser.add_argument("--log-path", required=True, help="Log file path")
+    parser.add_argument("--csc-path", required=True, help="Cooja CSC path")
     parser.add_argument("--out", required=True, help="Output summary CSV path")
     args = parser.parse_args()
 
-    log_path = Path(args.log)
-    summary = parse_log(log_path)
+    csv_path = Path(args.csv)
+    summary = parse_rx_csv(csv_path, args.warmup_s, args.measure_s, args.clock_second)
+
+    dio_count = 0
+    dao_count = 0
+    if args.cooja_log:
+        dio_count, dao_count = count_control_messages(Path(args.cooja_log))
 
     out_path = Path(args.out)
     header = (
-        "mode,senders,senders_seen,send_interval,sim_time_ms,"
-        "tx_range,success_tx,success_rx,rx,expected,pdr,avg_delay_ticks,log_file\n"
+        "mode,stage,n_senders,seed,success_ratio,interference_ratio,send_interval_s,"
+        "rx_count,tx_expected,pdr,avg_delay_ms,p95_delay_ms,dio_count,dao_count,"
+        "duration_s,warmup_s,measure_s,log_path,csc_path\n"
     )
     row = (
-        f"{args.mode},{args.senders},{summary['senders_seen']},{args.send_interval},"
-        f"{args.sim_time_ms},{args.tx_range},{args.success_tx},{args.success_rx},"
-        f"{summary['rx']},{summary['expected']},{summary['pdr']:.6f},{summary['avg_delay_ticks']:.2f},"
-        f"{log_path}\n"
+        f"{args.mode},{args.stage},{args.n_senders},{args.seed},"
+        f"{args.success_ratio},{args.interference_ratio},{args.send_interval_s},"
+        f"{summary['rx']},{summary['expected']},{summary['pdr']:.6f},"
+        f"{summary['avg_delay_ms']:.2f},{summary['p95_delay_ms']:.2f},"
+        f"{dio_count},{dao_count},{args.duration_s},{args.warmup_s},{args.measure_s},"
+        f"{args.log_path},{args.csc_path}\n"
     )
 
     if not out_path.exists():
         out_path.write_text(header + row)
     else:
-        with out_path.open("a", encoding="utf-8") as f:
-            f.write(row)
+        with out_path.open("a", encoding="utf-8") as handle:
+            handle.write(row)
 
     return 0
 
