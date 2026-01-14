@@ -1,0 +1,16 @@
+[32mINFO  [main] [Cooja.java:1145] - Loading /home/dev/WSN-IoT-lab/BRPL-lab/cooja/brpl_minimal.csc random seed: null[0;39m
+> make -C /home/dev/WSN-IoT-lab/BRPL-lab receiver_root.cooja TARGET=cooja
+make: Entering directory '/home/dev/WSN-IoT-lab/BRPL-lab'
+which: no ccache in (/usr/local/bin:/usr/bin:/var/lib/snapd/snap/bin:/home/dev/.config/Code/User/globalStorage/github.copilot-chat/debugCommand)
+  LD        build/cooja/receiver_root.cooja
+make: Leaving directory '/home/dev/WSN-IoT-lab/BRPL-lab'
+> make -C /home/dev/WSN-IoT-lab/BRPL-lab sender.cooja TARGET=cooja
+make: Entering directory '/home/dev/WSN-IoT-lab/BRPL-lab'
+which: no ccache in (/usr/local/bin:/usr/bin:/var/lib/snapd/snap/bin:/home/dev/.config/Code/User/globalStorage/github.copilot-chat/debugCommand)
+  LD        build/cooja/sender.cooja
+make: Leaving directory '/home/dev/WSN-IoT-lab/BRPL-lab'
+[1;91mERROR [main] [Cooja.java:1152] - Failed to load simulation: No plugin controlling simulation, aborting[0;39m
+[1;91mERROR [main] [Cooja.java:1158] - TEST /home/dev/WSN-IoT-lab/BRPL-lab/cooja/brpl_minimal.csc FAILED
+[0;39m
+[1;91mERROR [main] [Cooja.java:1181] - Failed tests:
+/home/dev/WSN-IoT-lab/BRPL-lab/cooja/brpl_minimal.csc seed: null[0;39m
