@@ -113,7 +113,7 @@ COOJA_TESTLOG="$COOJA_LOGDIR/COOJA.testlog"
 
 SIM_TIME_MS=$((DURATION_S * 1000))
 
-DEFINES="SEND_INTERVAL_SECONDS=$SEND_INTERVAL_S"
+DEFINES="SEND_INTERVAL_SECONDS=$SEND_INTERVAL_S WARMUP_SECONDS=$WARMUP_S"
 if [ -n "$BRPL_FLAG" ]; then
   DEFINES="$DEFINES $BRPL_FLAG"
 fi
@@ -195,9 +195,11 @@ python3 "$ROOT_DIR/tools/python/log_parser.py" \
   --csc-path "$CSC_PATH" \
   --out "$SUMMARY_PATH"
 
-Rscript "$ROOT_DIR/tools/R/find_thresholds.R" \
-  --summary "$SUMMARY_PATH" \
-  --out "$RESULTS_DIR/thresholds.csv" || true
+if [ -z "${SKIP_THRESHOLDS:-}" ]; then
+  Rscript "$ROOT_DIR/tools/R/find_thresholds.R" \
+    --summary "$SUMMARY_PATH" \
+    --out "$RESULTS_DIR/thresholds.csv" || true
+fi
 
 if [ $COOJA_STATUS -ne 0 ]; then
   exit 0

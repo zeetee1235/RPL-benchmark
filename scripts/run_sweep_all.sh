@@ -2,6 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+export SKIP_THRESHOLDS=1
 
 echo "[all] Stage 1 start @ $(date '+%F %T')"
 "$ROOT_DIR/scripts/run_sweep_stage1.sh"

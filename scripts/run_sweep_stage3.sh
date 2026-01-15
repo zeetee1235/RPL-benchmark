@@ -19,7 +19,7 @@ summary_path = "results/summary.csv"
 rows = []
 with open(summary_path, newline="", encoding="utf-8") as handle:
     reader = csv.DictReader(handle)
-    rows = [r for r in reader if r.get("stage") == "stage2" and r.get("mode") == "rpl-classic"]
+    rows = [r for r in reader if r.get("stage") == "stage2" and r.get("mode") == "rpl-lite"]
 
 cond_map = defaultdict(list)
 for row in rows:
@@ -50,15 +50,15 @@ PY
 )
 
 STAGE="stage3"
-MODE_LIST=("rpl-classic" "brpl")
+MODE_LIST=("rpl-lite" "brpl")
 SEEDS=(1 2 3)
 SEND_INTERVAL_LIST=(20 10 5 2)
 
 total=$(( ${#MODE_LIST[@]} * ${#SEND_INTERVAL_LIST[@]} * ${#SEEDS[@]} ))
 count=0
+export SKIP_THRESHOLDS=1
 
 for mode in "${MODE_LIST[@]}"; do
-  make -C "$ROOT_DIR" TARGET=cooja clean
   for interval in "${SEND_INTERVAL_LIST[@]}"; do
     for seed in "${SEEDS[@]}"; do
       count=$((count + 1))

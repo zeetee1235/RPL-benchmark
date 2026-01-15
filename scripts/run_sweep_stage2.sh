@@ -20,7 +20,7 @@ N_LIST = [5, 10, 15, 20, 25, 30, 40, 50]
 rows = []
 with open(summary_path, newline="", encoding="utf-8") as handle:
     reader = csv.DictReader(handle)
-    rows = [r for r in reader if r.get("stage") == "stage1" and r.get("mode") == "rpl-classic"]
+    rows = [r for r in reader if r.get("stage") == "stage1" and r.get("mode") == "rpl-lite"]
 
 pdr_by_n = defaultdict(list)
 for row in rows:
@@ -51,7 +51,7 @@ PY
 )
 
 STAGE="stage2"
-MODE_LIST=("rpl-classic" "brpl")
+MODE_LIST=("rpl-lite" "brpl")
 N_LIST=()
 if [ "$STABLE_N" -eq "$MARGINAL_N" ]; then
   N_LIST=("$STABLE_N")
@@ -66,9 +66,9 @@ SEND_INTERVAL_S="${SEND_INTERVAL_S:-10}"
 
 total=$(( ${#MODE_LIST[@]} * ${#N_LIST[@]} * ${#SUCCESS_LIST[@]} * ${#INTERFERENCE_LIST[@]} * ${#SEEDS[@]} ))
 count=0
+export SKIP_THRESHOLDS=1
 
 for mode in "${MODE_LIST[@]}"; do
-  make -C "$ROOT_DIR" TARGET=cooja clean
   for n in "${N_LIST[@]}"; do
     for success in "${SUCCESS_LIST[@]}"; do
       for interference in "${INTERFERENCE_LIST[@]}"; do

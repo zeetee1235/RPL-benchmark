@@ -11,7 +11,7 @@
 ## 미해결 이슈
 
 1. 분석 스크립트 컬럼 불일치
-   - `analyze_results.py`가 `delay_ms`를 기대하지만 raw CSV는 `delay_ticks`
+   - `analyze_results.R`가 `delay_ms`를 기대하지만 raw CSV는 `delay_ticks`
    - Matplotlib 캐시 경로 권한 문제로 `MPLCONFIGDIR` 설정 필요
 
 2. 결과 집계 중복 행 존재
@@ -25,6 +25,10 @@
 4. 큐 패널티 계수 미확정
    - BRPL_QUEUE_WEIGHT 적정 값이 확정되지 않음
    - 안정화 후 단계적 스윕 필요
+
+5. rpl/brpl 붕괴시점 예측 실패
+   - rpl은 붕괴하지않고 brpl이 먼저 낮은 조건에서 붕괴함
+
 
 ## 해결/완화된 이슈 (stage1 기준)
 
@@ -57,8 +61,29 @@
   - rx_count/tx_expected: 13 ~ 18
 - `summary.csv` 중복 행 누적 발생
 
+### RTT 전환 후 단일 run 테스트 (2026-01-15)
+
+- 실행: `scripts/run_experiment.sh --mode rpl-classic --stage stage1 --n-senders 5 --seed 1`
+- Cooja 로드 실패: `motes/build/cooja/mtype*.cooja` 라이브러리 없음
+  - 에러: `Cannot open library: .../motes/build/cooja/mtype*.cooja`
+  - 결과: 시뮬레이션 미실행, CSV 비어 있음
+- `tools/R/find_thresholds.R` 실행 중 `order()` 길이 불일치 오류 발견 후 수정 완료
+
+### RTT 전환 후 단일 run 테스트 (rpl-lite 기준, 2026-01-15)
+
+- 실행: `scripts/run_experiment.sh --mode rpl-lite --stage stage1 --n-senders 5 --seed 1`
+- 동일 증상으로 Cooja 로드 실패 (`motes/build/cooja/mtype*.cooja`)
+- `tools/R/find_thresholds.R`는 정상 종료(출력 생성)
+
+### Cooja 라이브러리 경로 수정 및 Stage1 스윕 재시도 (2026-01-15)
+
+- `motes/build/cooja -> ../../build/cooja` 심볼릭 링크 추가로 로드 실패 해결
+- 단일 run 재시도 성공 (rpl-lite, N=5, seed=1)
+- `scripts/run_sweep_stage1.sh` 실행은 120s 타임아웃으로 중단됨
+  - rpl-lite N=5~25, brpl N=5~25 일부까지 진행됨(로그 기준)
+
 ## 다음 단계
 
 1. `analyze_results.py`를 raw CSV 포맷(`delay_ticks`)에 맞게 수정
 2. `summary.csv` 중복 제거 기준 정의 후 정리
-3. BRPL OF의 혼잡 반영/패널티 계수 스윕
+3. rpl-lite vs brpl 비교로 정렬(동일 베이스에서 OF만 비교)

@@ -65,7 +65,7 @@ duration_s,warmup_s,measure_s,log_path,csc_path
 * 고정: `SUCCESS_RATIO=1.0`, `INTERFERENCE_RATIO=1.0`, `SEND_INTERVAL_S=10`
 * N 스윕: `{5,10,15,20,25,30,40,50}`
 * Seeds: `{1,2,3}`
-* Modes: `{rpl-classic, brpl}`
+* Modes: `{rpl-lite, brpl}`
 
 ### Stage 2: 링크 품질 스윕
 
@@ -79,7 +79,7 @@ Stage 1의 **RPL classic** 결과로부터 N 값 2개를 자동 선택:
 
 * `SUCCESS_RATIO ∈ {1.0,0.95,0.9,0.85,0.8,0.75}`
 * `INTERFERENCE_RATIO ∈ {1.0,0.95,0.9,0.85}`
-* Seeds `{1,2,3}`, Modes `{rpl-classic, brpl}`
+* Seeds `{1,2,3}`, Modes `{rpl-lite, brpl}`
 
 ### Stage 3: 트래픽 스윕
 
@@ -91,7 +91,7 @@ Stage 2의 **RPL classic** 결과에서 **knee** 조건 선택:
 스윕 파라미터:
 
 * `SEND_INTERVAL_S ∈ {20,10,5,2}` (내림차순)
-* Seeds `{1,2,3}`, Modes `{rpl-classic, brpl}`
+* Seeds `{1,2,3}`, Modes `{rpl-lite, brpl}`
 
 ## 붕괴 시점 탐지
 
@@ -114,7 +114,7 @@ Stage 2의 **RPL classic** 결과에서 **knee** 조건 선택:
 
 ```bash
 ./scripts/run_experiment.sh \
-  --mode rpl-classic \
+  --mode rpl-lite \
   --stage stage1 \
   --n-senders 20 \
   --seed 1 \

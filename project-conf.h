@@ -13,6 +13,14 @@ extern rpl_of_t rpl_brpl;
 #define RPL_CONF_WITH_DAO_ACK 0
 #endif
 
+#ifndef SEND_INTERVAL_SECONDS
+#define SEND_INTERVAL_SECONDS 10
+#endif
+
+#ifndef WARMUP_SECONDS
+#define WARMUP_SECONDS 60
+#endif
+
 /* Keep logs readable in Cooja for experiment parsing. */
 #define LOG_LEVEL_APP LOG_LEVEL_INFO
 #define LOG_CONF_LEVEL_RPL LOG_LEVEL_INFO

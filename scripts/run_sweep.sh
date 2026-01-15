@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 
-MODE_LIST=("rpl-lite" "rpl-classic" "brpl")
+MODE_LIST=("rpl-lite" "brpl")
 SENDER_LIST=(10 20 30 40 50 60)
 
 # Stress settings to push RPL toward instability.

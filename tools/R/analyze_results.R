@@ -12,6 +12,20 @@ if (!dir.exists(analysis_dir)) dir.create(analysis_dir, recursive = TRUE)
 
 summary <- read.csv(summary_path, stringsAsFactors = FALSE)
 
+cond_cols <- c("mode","stage","n_senders","success_ratio","interference_ratio","send_interval_s")
+dedup_cols <- c(cond_cols, "seed")
+if (all(dedup_cols %in% names(summary))) {
+  before_rows <- nrow(summary)
+  summary <- summary[!duplicated(summary[dedup_cols]), , drop = FALSE]
+  removed <- before_rows - nrow(summary)
+  if (removed > 0) {
+    cat(sprintf("Deduplicated summary rows: %d removed\n", removed))
+  }
+} else {
+  missing_cols <- setdiff(dedup_cols, names(summary))
+  cat("Dedup skipped; missing columns:", paste(missing_cols, collapse = ","), "\n")
+}
+
 numeric_cols <- c(
   "n_senders","seed","success_ratio","interference_ratio","send_interval_s",
   "rx_count","tx_expected","pdr","avg_delay_ms","p95_delay_ms",
@@ -21,9 +35,15 @@ for (col in numeric_cols) {
   if (col %in% names(summary)) summary[[col]] <- suppressWarnings(as.numeric(summary[[col]]))
 }
 
-summary$overhead_per_s <- (summary$dio_count + summary$dao_count) / summary$duration_s
-
-cond_cols <- c("mode","stage","n_senders","success_ratio","interference_ratio","send_interval_s")
+if (all(c("dio_count","dao_count","duration_s") %in% names(summary))) {
+  summary$overhead_per_s <- ifelse(
+    is.finite(summary$duration_s) & summary$duration_s > 0,
+    (summary$dio_count + summary$dao_count) / summary$duration_s,
+    NA_real_
+  )
+} else {
+  summary$overhead_per_s <- NA_real_
+}
 agg <- aggregate(
   cbind(pdr, avg_delay_ms, p95_delay_ms, rx_count, tx_expected, dio_count, dao_count) ~ .,
   data = summary[, c(cond_cols, "pdr","avg_delay_ms","p95_delay_ms","rx_count","tx_expected","dio_count","dao_count")],

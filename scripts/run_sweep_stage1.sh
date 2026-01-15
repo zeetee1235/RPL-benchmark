@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 
 STAGE="stage1"
-MODE_LIST=("rpl-classic" "brpl")
+MODE_LIST=("rpl-lite" "brpl")
 N_LIST=(5 10 15 20 25 30 40 50)
 SEEDS=(1 2 3)
 
@@ -14,9 +14,9 @@ SEND_INTERVAL_S="${SEND_INTERVAL_S:-10}"
 
 total=$(( ${#MODE_LIST[@]} * ${#N_LIST[@]} * ${#SEEDS[@]} ))
 count=0
+export SKIP_THRESHOLDS=1
 
 for mode in "${MODE_LIST[@]}"; do
-  make -C "$ROOT_DIR" TARGET=cooja clean
   for n in "${N_LIST[@]}"; do
     for seed in "${SEEDS[@]}"; do
       count=$((count + 1))

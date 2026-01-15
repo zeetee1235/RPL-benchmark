@@ -1,7 +1,7 @@
-# Exclude Cooja simulation files from GitHub language stats
 *.csc linguist-vendored
 *.csc linguist-detectable=false
 
-# (optional) If you also have Cooja .cooja files and want to exclude them too
+
 *.cooja linguist-vendored
 *.cooja linguist-detectable=false
+
