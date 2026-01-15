@@ -9,6 +9,7 @@
 
 #include "net/ipv6/uip.h"
 #include "net/ipv6/uiplib.h"
+#include "net/ipv6/uip-ds6-route.h"
 #include "net/routing/routing.h"
 #include "net/ipv6/simple-udp.h"
 
@@ -72,6 +73,8 @@ sync_rx_callback(struct simple_udp_connection *c,
 
   uint32_t t_local = (uint32_t)clock_time();
   int32_t offset = (int32_t)(t_root - t_local);
+  LOG_INFO("sync rx: t_root=%lu t_local=%lu offset=%ld\n",
+           (unsigned long)t_root, (unsigned long)t_local, (long)offset);
 
   if(offset_count < SYNC_WINDOW) {
     offset_sum += offset;
@@ -96,6 +99,7 @@ PROCESS_THREAD(sender_process, ev, data)
 {
   static struct etimer periodic_timer;
   static uint32_t seq;
+  static uint8_t last_reachable;
   char buf[64];
 
   (void)ev; (void)data;
@@ -108,17 +112,37 @@ PROCESS_THREAD(sender_process, ev, data)
   simple_udp_register(&udp_conn, UDP_PORT, NULL, UDP_PORT, NULL);
   simple_udp_register(&sync_conn, SYNC_PORT, NULL, SYNC_PORT, sync_rx_callback);
   etimer_set(&periodic_timer, SEND_INTERVAL);
+  last_reachable = 0;
 
   while(1) {
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&periodic_timer));
     etimer_reset(&periodic_timer);
+
+    uint8_t reachable = NETSTACK_ROUTING.node_is_reachable();
+    uint8_t joined = NETSTACK_ROUTING.node_has_joined();
+    if(reachable != last_reachable) {
+      LOG_INFO("reachable changed: %u -> %u\n",
+               (unsigned)last_reachable, (unsigned)reachable);
+      last_reachable = reachable;
+    }
+    if(LOG_INFO_ENABLED) {
+      const uip_ipaddr_t *defrt = uip_ds6_defrt_choose();
+      int routes = uip_ds6_route_num_routes();
+      LOG_INFO("routing state: joined=%d reachable=%u routes=%d defrt=%s",
+               joined, (unsigned)reachable, routes, defrt ? "yes" : "no");
+      if(defrt) {
+        LOG_INFO_(" defrt=");
+        LOG_INFO_6ADDR(defrt);
+      }
+      LOG_INFO_("\n");
+    }
 
     if(!has_sync) {
       LOG_INFO("waiting for sync\n");
       continue;
     }
 
-    if(NETSTACK_ROUTING.node_is_reachable()) {
+    if(joined) {
       uint32_t t_send_local = (uint32_t)clock_time();
       int64_t t_send_root64 = (int64_t)t_send_local + (int64_t)offset_avg;
       uint32_t t_send_root = t_send_root64 < 0 ? 0 : (uint32_t)t_send_root64;

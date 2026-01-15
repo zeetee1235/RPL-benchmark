@@ -1,213 +1,121 @@
 #!/usr/bin/env Rscript
-#
-# analyze_results.R
-# RPL 실험 결과를 분석하고 LaTeX 보고서를 생성합니다.
-#
 
-# 필요한 패키지 로드
-suppressPackageStartupMessages({
-  library(dplyr)
-  library(tidyr)
-  library(ggplot2)
-  library(knitr)
-  library(kableExtra)
-})
+args <- commandArgs(trailingOnly = TRUE)
+root_dir <- if (length(args) >= 1) args[[1]] else "."
+pdr_threshold <- if (length(args) >= 2) as.numeric(args[[2]]) else 0.9
 
-# 작업 디렉토리 설정
-setwd("/home/dev/WSN-IoT-lab/rpl-benchmark")
+summary_path <- file.path(root_dir, "results", "summary.csv")
+analysis_dir <- file.path(root_dir, "results", "analysis")
 
-# CSV 파일 읽기 함수
-read_result_csv <- function(file_path) {
-  df <- read.csv(file_path, stringsAsFactors = FALSE)
-  
-  # 파일명에서 메타데이터 추출
-  filename <- basename(file_path)
-  parts <- strsplit(filename, "_")[[1]]
-  
-  df$n_senders <- as.integer(sub("N", "", parts[1]))
-  df$seed <- as.integer(sub("seed", "", parts[2]))
-  df$success_ratio <- as.numeric(sub("sr(.+)p(.+)", "\\1.\\2", parts[3]))
-  df$interference_ratio <- as.numeric(sub("ir(.+)p(.+)", "\\1.\\2", parts[4]))
-  df$send_interval <- as.integer(sub("si(.+)\\.csv", "\\1", parts[5]))
-  
-  return(df)
+if (!file.exists(summary_path)) stop("summary.csv not found: ", summary_path)
+if (!dir.exists(analysis_dir)) dir.create(analysis_dir, recursive = TRUE)
+
+summary <- read.csv(summary_path, stringsAsFactors = FALSE)
+
+numeric_cols <- c(
+  "n_senders","seed","success_ratio","interference_ratio","send_interval_s",
+  "rx_count","tx_expected","pdr","avg_delay_ms","p95_delay_ms",
+  "dio_count","dao_count","duration_s","warmup_s","measure_s"
+)
+for (col in numeric_cols) {
+  if (col %in% names(summary)) summary[[col]] <- suppressWarnings(as.numeric(summary[[col]]))
 }
 
-# 모든 결과 파일 읽기
-read_all_results <- function(stage, mode) {
-  results_dir <- file.path("results", "raw", stage, mode)
-  csv_files <- list.files(results_dir, pattern = "\\.csv$", full.names = TRUE)
-  
-  if (length(csv_files) == 0) {
-    cat("No CSV files found in", results_dir, "\n")
-    return(NULL)
+summary$overhead_per_s <- (summary$dio_count + summary$dao_count) / summary$duration_s
+
+cond_cols <- c("mode","stage","n_senders","success_ratio","interference_ratio","send_interval_s")
+agg <- aggregate(
+  cbind(pdr, avg_delay_ms, p95_delay_ms, rx_count, tx_expected, dio_count, dao_count) ~ .,
+  data = summary[, c(cond_cols, "pdr","avg_delay_ms","p95_delay_ms","rx_count","tx_expected","dio_count","dao_count")],
+  FUN = mean,
+  na.rm = TRUE
+)
+runs <- aggregate(
+  seed ~ .,
+  data = summary[, c(cond_cols, "seed")],
+  FUN = length
+)
+names(runs)[names(runs) == "seed"] <- "runs"
+agg <- merge(agg, runs, all.x = TRUE)
+
+agg$collapse_flag <- (agg$pdr < pdr_threshold) | (agg$rx_count <= 0)
+
+stage1 <- agg[agg$stage == "stage1", , drop = FALSE]
+stage1_rows <- list()
+for (mode in sort(unique(stage1$mode))) {
+  subset_mode <- stage1[stage1$mode == mode, , drop = FALSE]
+  subset_mode <- subset_mode[order(subset_mode$n_senders), ]
+  idx <- which(subset_mode$collapse_flag)
+  if (length(idx) > 0) {
+    row <- subset_mode[idx[1], c("mode","stage","n_senders","pdr","avg_delay_ms","p95_delay_ms","runs")]
+  } else {
+    row <- data.frame(
+      mode = mode, stage = "stage1", n_senders = NA,
+      pdr = NA, avg_delay_ms = NA, p95_delay_ms = NA, runs = NA
+    )
   }
-  
-  all_data <- lapply(csv_files, read_result_csv)
-  combined <- bind_rows(all_data)
-  combined$mode <- mode
-  combined$stage <- stage
-  
-  return(combined)
+  stage1_rows[[length(stage1_rows) + 1]] <- row
 }
+stage1_out <- do.call(rbind, stage1_rows)
+write.csv(stage1_out, file.path(analysis_dir, "collapse_stage1.csv"), row.names = FALSE)
 
-# 통계 요약 생성
-generate_summary <- function(data) {
-  summary <- data %>%
-    group_by(mode, n_senders, seed) %>%
-    summarise(
-      total_sent = max(seq, na.rm = TRUE),
-      total_received = n(),
-      pdr = (total_received / total_sent) * 100,
-      avg_delay_ms = mean(delay_ms, na.rm = TRUE),
-      median_delay_ms = median(delay_ms, na.rm = TRUE),
-      max_delay_ms = max(delay_ms, na.rm = TRUE),
-      .groups = 'drop'
-    )
-  
-  return(summary)
-}
-
-# 모드별 평균 통계
-aggregate_by_mode <- function(summary) {
-  aggregated <- summary %>%
-    group_by(mode, n_senders) %>%
-    summarise(
-      mean_pdr = mean(pdr, na.rm = TRUE),
-      sd_pdr = sd(pdr, na.rm = TRUE),
-      mean_delay = mean(avg_delay_ms, na.rm = TRUE),
-      sd_delay = sd(avg_delay_ms, na.rm = TRUE),
-      n_runs = n(),
-      .groups = 'drop'
-    )
-  
-  return(aggregated)
-}
-
-# LaTeX 테이블 생성
-generate_latex_table <- function(aggregated, caption, label) {
-  table_data <- aggregated %>%
-    mutate(
-      PDR = sprintf("%.2f ± %.2f", mean_pdr, sd_pdr),
-      Delay = sprintf("%.2f ± %.2f", mean_delay, sd_delay)
-    ) %>%
-    select(Mode = mode, `N Senders` = n_senders, PDR, `Delay (ms)` = Delay, `Runs` = n_runs)
-  
-  latex_code <- kable(table_data, 
-                      format = "latex", 
-                      booktabs = TRUE,
-                      caption = caption,
-                      label = label) %>%
-    kable_styling(latex_options = c("hold_position"))
-  
-  return(latex_code)
-}
-
-# 그래프 생성
-plot_pdr_comparison <- function(aggregated, output_file) {
-  p <- ggplot(aggregated, aes(x = n_senders, y = mean_pdr, color = mode, group = mode)) +
-    geom_line(size = 1) +
-    geom_point(size = 3) +
-    geom_errorbar(aes(ymin = mean_pdr - sd_pdr, ymax = mean_pdr + sd_pdr), width = 0.5) +
-    labs(
-      title = "Packet Delivery Ratio by Number of Senders",
-      x = "Number of Senders",
-      y = "PDR (%)",
-      color = "Mode"
-    ) +
-    theme_minimal() +
-    theme(
-      plot.title = element_text(hjust = 0.5, face = "bold"),
-      legend.position = "bottom"
-    ) +
-    scale_y_continuous(limits = c(0, 100))
-  
-  ggsave(output_file, plot = p, width = 8, height = 5, dpi = 300)
-  cat("Plot saved to", output_file, "\n")
-}
-
-plot_delay_comparison <- function(aggregated, output_file) {
-  p <- ggplot(aggregated, aes(x = n_senders, y = mean_delay, color = mode, group = mode)) +
-    geom_line(size = 1) +
-    geom_point(size = 3) +
-    geom_errorbar(aes(ymin = mean_delay - sd_delay, ymax = mean_delay + sd_delay), width = 0.5) +
-    labs(
-      title = "Average Delay by Number of Senders",
-      x = "Number of Senders",
-      y = "Delay (ms)",
-      color = "Mode"
-    ) +
-    theme_minimal() +
-    theme(
-      plot.title = element_text(hjust = 0.5, face = "bold"),
-      legend.position = "bottom"
-    )
-  
-  ggsave(output_file, plot = p, width = 8, height = 5, dpi = 300)
-  cat("Plot saved to", output_file, "\n")
-}
-
-# 메인 실행
-main <- function() {
-  cat("========================================\n")
-  cat("RPL Benchmark Results Analysis\n")
-  cat("========================================\n\n")
-  
-  # Stage1 데이터 읽기
-  stage <- "stage1"
-  modes <- c("rpl-classic", "rpl-lite", "brpl")
-  
-  all_results <- list()
-  for (mode in modes) {
-    cat("Reading", mode, "results...\n")
-    data <- read_all_results(stage, mode)
-    if (!is.null(data)) {
-      all_results[[mode]] <- data
+stage2 <- agg[agg$stage == "stage2", , drop = FALSE]
+stage2_rows <- list()
+if (nrow(stage2) > 0) {
+  key <- interaction(stage2$mode, stage2$n_senders, stage2$interference_ratio, drop = TRUE)
+  groups <- split(stage2, key)
+  for (group in groups) {
+    group <- group[order(-group$success_ratio), ]
+    idx <- which(group$collapse_flag)
+    if (length(idx) > 0) {
+      row <- group[idx[1], c("mode","stage","n_senders","success_ratio","interference_ratio","pdr","avg_delay_ms","p95_delay_ms","runs")]
+      stage2_rows[[length(stage2_rows) + 1]] <- row
     }
   }
-  
-  if (length(all_results) == 0) {
-    cat("No data found!\n")
-    return()
-  }
-  
-  # 모든 데이터 결합
-  combined_data <- bind_rows(all_results)
-  
-  # 통계 요약
-  cat("\nGenerating summary statistics...\n")
-  summary <- generate_summary(combined_data)
-  aggregated <- aggregate_by_mode(summary)
-  
-  # 결과 출력
-  print(aggregated)
-  
-  # LaTeX 테이블 생성
-  cat("\nGenerating LaTeX table...\n")
-  latex_table <- generate_latex_table(
-    aggregated,
-    caption = "Performance Comparison of RPL Variants (Stage 1)",
-    label = "tab:stage1_results"
-  )
-  
-  # 테이블 저장
-  table_file <- "docs/tables/stage1_summary.tex"
-  dir.create(dirname(table_file), recursive = TRUE, showWarnings = FALSE)
-  writeLines(latex_table, table_file)
-  cat("LaTeX table saved to", table_file, "\n")
-  
-  # 그래프 생성
-  cat("\nGenerating plots...\n")
-  dir.create("docs/figures", recursive = TRUE, showWarnings = FALSE)
-  plot_pdr_comparison(aggregated, "docs/figures/stage1_pdr.pdf")
-  plot_delay_comparison(aggregated, "docs/figures/stage1_delay.pdf")
-  
-  cat("\n========================================\n")
-  cat("Analysis complete!\n")
-  cat("========================================\n")
 }
+stage2_out <- if (length(stage2_rows) > 0) do.call(rbind, stage2_rows) else data.frame()
+write.csv(stage2_out, file.path(analysis_dir, "collapse_stage2.csv"), row.names = FALSE)
 
-# 스크립트 실행
-if (!interactive()) {
-  main()
+stage3 <- agg[agg$stage == "stage3", , drop = FALSE]
+stage3_rows <- list()
+if (nrow(stage3) > 0) {
+  key <- interaction(stage3$mode, stage3$n_senders, stage3$success_ratio, stage3$interference_ratio, drop = TRUE)
+  groups <- split(stage3, key)
+  for (group in groups) {
+    group <- group[order(group$send_interval_s), ]
+    idx <- which(group$collapse_flag)
+    if (length(idx) > 0) {
+      row <- group[idx[1], c("mode","stage","n_senders","success_ratio","interference_ratio","send_interval_s","pdr","avg_delay_ms","p95_delay_ms","runs")]
+      stage3_rows[[length(stage3_rows) + 1]] <- row
+    }
+  }
 }
+stage3_out <- if (length(stage3_rows) > 0) do.call(rbind, stage3_rows) else data.frame()
+write.csv(stage3_out, file.path(analysis_dir, "collapse_stage3.csv"), row.names = FALSE)
+
+comp_mean <- aggregate(
+  cbind(pdr, avg_delay_ms, p95_delay_ms, overhead_per_s) ~ mode + stage,
+  data = summary,
+  FUN = mean,
+  na.rm = TRUE
+)
+comp_median <- aggregate(
+  cbind(pdr, avg_delay_ms, p95_delay_ms, overhead_per_s) ~ mode + stage,
+  data = summary,
+  FUN = median,
+  na.rm = TRUE
+)
+names(comp_mean)[3:ncol(comp_mean)] <- paste0(names(comp_mean)[3:ncol(comp_mean)], "_mean")
+names(comp_median)[3:ncol(comp_median)] <- paste0(names(comp_median)[3:ncol(comp_median)], "_median")
+comp <- merge(comp_mean, comp_median, by = c("mode","stage"))
+runs_by_mode <- aggregate(seed ~ mode + stage, data = summary, FUN = length)
+names(runs_by_mode)[names(runs_by_mode) == "seed"] <- "runs"
+comp <- merge(comp, runs_by_mode, by = c("mode","stage"))
+write.csv(comp, file.path(analysis_dir, "mode_stage_comparison.csv"), row.names = FALSE)
+
+cat("Analysis complete.\n")
+cat("Outputs:\n")
+cat(" -", file.path(analysis_dir, "collapse_stage1.csv"), "\n")
+cat(" -", file.path(analysis_dir, "collapse_stage2.csv"), "\n")
+cat(" -", file.path(analysis_dir, "collapse_stage3.csv"), "\n")
+cat(" -", file.path(analysis_dir, "mode_stage_comparison.csv"), "\n")

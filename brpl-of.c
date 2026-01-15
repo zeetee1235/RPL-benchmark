@@ -27,7 +27,14 @@ static uint16_t
 nbr_link_metric(rpl_nbr_t *nbr)
 {
   const struct link_stats *stats = rpl_neighbor_get_link_stats(nbr);
-  return stats != NULL ? stats->etx : 0xffff;
+  if(stats == NULL) {
+    LOG_WARN("link stats missing for neighbor %p\n", (void *)nbr);
+    return 0xffff;
+  }
+  if(stats->etx == 0) {
+    LOG_WARN("link stats etx=0 for neighbor %p\n", (void *)nbr);
+  }
+  return stats->etx;
 }
 /*---------------------------------------------------------------------------*/
 static uint16_t
@@ -96,14 +103,20 @@ static int
 nbr_has_usable_link(rpl_nbr_t *nbr)
 {
   uint16_t link_metric = nbr_link_metric(nbr);
-  return link_metric <= 512;
+  return link_metric <= 4096;
 }
 /*---------------------------------------------------------------------------*/
 static int
 nbr_is_acceptable_parent(rpl_nbr_t *nbr)
 {
   uint16_t path_cost = nbr_path_cost(nbr);
-  return nbr_has_usable_link(nbr) && path_cost <= 32768;
+  int usable = nbr_has_usable_link(nbr);
+  int ok = usable && path_cost <= 60000;
+  if(!ok) {
+    LOG_INFO("reject parent %p: etx=%u path_cost=%u\n",
+             (void *)nbr, nbr_link_metric(nbr), path_cost);
+  }
+  return ok;
 }
 /*---------------------------------------------------------------------------*/
 static int

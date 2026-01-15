@@ -1,7 +1,7 @@
 ## 상태 요약
-- CSV 생성 확인 후 R로 분석 예정
-- summary.csv 앞부분 빈 행: 초기 CSV 추출 실패 흔적
-- brpl pdr이 처음부터 0으로 표시됨 제대로 구현이 안되어있거나 실행이 안되었을 가능성 높음
+- brpl에서 부모노드를 유지하지 못해 라우팅 형성이 안됨
+- brpl에서 부모/라우팅 유지가 불안정
+- queue penalty를 어느정도로 완화를 해야할지?
 
 ## 해결 완료
 - find_thresholds.py Condition 해시 오류 수정 완료
