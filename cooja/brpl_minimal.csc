@@ -18,7 +18,7 @@
       org.contikios.cooja.contikimote.ContikiMoteType
       <identifier>root</identifier>
       <description>Receiver Root</description>
-      <source>/home/dev/WSN-IoT-lab/rpl-benchmark/receiver_root.c</source>
+      <source>/home/dev/WSN-IoT-lab/rpl-benchmark/motes/receiver_root.c</source>
       <commands>make -C /home/dev/WSN-IoT-lab/rpl-benchmark receiver_root.cooja TARGET=cooja</commands>
       <moteinterface>org.contikios.cooja.interfaces.Position</moteinterface>
       <moteinterface>org.contikios.cooja.interfaces.Battery</moteinterface>
@@ -42,7 +42,7 @@
       org.contikios.cooja.contikimote.ContikiMoteType
       <identifier>sender</identifier>
       <description>Sensor Sender</description>
-      <source>/home/dev/WSN-IoT-lab/rpl-benchmark/sender.c</source>
+      <source>/home/dev/WSN-IoT-lab/rpl-benchmark/motes/sender.c</source>
       <commands>make -C /home/dev/WSN-IoT-lab/rpl-benchmark sender.cooja TARGET=cooja</commands>
       <moteinterface>org.contikios.cooja.interfaces.Position</moteinterface>
       <moteinterface>org.contikios.cooja.interfaces.Battery</moteinterface>

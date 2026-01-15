@@ -1,68 +1,64 @@
-# 문제점 및 막힌 부분 정리
+# 문제점 및 진행 상황 정리
 
-본 문서는 현재 실험 파이프라인에서 확인된 문제점과 병목을 정리한 내용이다.
+본 문서는 실험 파이프라인에서 확인된 문제와 해결 여부를 간단히 정리한다.
 
-## 핵심 문제
+## 현황 요약
 
-1. BRPL에서 PDR이 거의 0으로 집계됨
-   - 대부분의 BRPL 실험에서 `rx_count=0`이 반복됨.
-   - 원인: 송신 자체가 발생하지 않거나, 라우팅이 유지되지 못하는 상태가 지속됨.
-   - 관련 로그: `results/raw/stage1/brpl/*.log`
+- BRPL stage1 재실행 결과는 정상 수신(PDR=1.0)으로 확인됨
+- 분석 스크립트(`analyze_results.py`)는 raw CSV 컬럼 불일치로 아직 실패
+- `summary.csv`에 동일 조건 중복 행이 누적되어 있음
 
-2. 라우팅 reachable 상태가 끝까지 false
-   - `node_is_reachable()`가 false로 유지되어 sender가 송신을 막는 구조.
-   - routing state 로그에서 `joined=1`이어도 `reachable=0`, `routes=0`이 반복됨.
-   - 관련 코드: `rpl-benchmark/sender.c`
+## 미해결 이슈
 
-3. BRPL 부모 선택/유지 불안정
-   - 로그 상 parent switch가 빈번하게 발생.
-   - 부모가 붙었다가 해제되는 패턴이 반복됨.
-   - 관련 코드: `rpl-benchmark/brpl-of.c`
+1. 분석 스크립트 컬럼 불일치
+   - `analyze_results.py`가 `delay_ms`를 기대하지만 raw CSV는 `delay_ticks`
+   - Matplotlib 캐시 경로 권한 문제로 `MPLCONFIGDIR` 설정 필요
 
-4. DAO/Route 기반 reachable 판단과 실험 설계 충돌
-   - RPL Lite는 “downward route”가 없으면 reachable=false로 판단.
-   - BRPL에서 DAO/route가 안정적으로 형성되지 않아 reachable이 올라오지 않음.
-   - 결과적으로 sender가 송신 자체를 차단.
+2. 결과 집계 중복 행 존재
+   - `results/summary.csv`에 동일 조건 중복 행이 누적됨
+   - 분석 시 평균 왜곡 가능
 
-5. 결과 집계 중복 행 존재
-   - `summary.csv`에 동일 조건 중복 행이 존재함.
-   - 분석 시 평균 왜곡 가능.
-   - 관련 파일: `rpl-benchmark/results/summary.csv`
-
-## 확인된 개선 시도
-
-- BRPL OF 부모 선택 조건 완화
-  - `ETX <= 512` -> `ETX <= 4096`
-  - `path_cost <= 32768` -> `path_cost <= 60000`
-  - 파일: `rpl-benchmark/brpl-of.c`
-
-- sender 송신 조건 변경(진단용)
-  - `node_is_reachable()` 대신 `node_has_joined()` 기준으로 송신
-  - 이후 BRPL에서 TX/RX 로그가 발생하고 PDR이 정상값으로 집계됨
-  - 파일: `rpl-benchmark/sender.c`
-
-## 막혀 있는 부분
-
-1. BRPL의 reachable 조건(DAO/route)을 정상화하지 못함
-   - 현재는 “joined 기반 송신”으로 우회한 상태.
-   - DAO/route가 왜 안정적으로 생성되지 않는지 추가 분석 필요.
-
-2. BRPL OF가 실제 혼잡/큐 정보를 충분히 반영하지 못함
-   - 현재는 로컬 node의 queuebuf 사용량만 반영.
-   - 부모 노드 혼잡 여부를 직접 측정하지 않음.
-
-3. 분석 결과가 중복된 실험에 의해 왜곡될 가능성
-   - BRPL이 정상 동작을 한 데이터가 충분하지 않음.
-   - 중복행 제거 기준을 명확히 정해야 함.
+3. BRPL 혼잡/큐 반영 미흡
+   - BRPL OF가 로컬 queuebuf만 반영
+   - 부모 노드 혼잡 여부는 직접 반영되지 않음
 
 4. 큐 패널티 계수 미확정
-   - BRPL_QUEUE_WEIGHT의 적정 값(예: ETX_DIVISOR/16 ~ /2)이 아직 실험적으로 확정되지 않음.
-   - 현재는 parent 유지 불안정/DAO 문제를 우선 해결 중이라 패널티 튜닝을 못함.
-   - 안정화 후 단계적 스윕으로 PDR/지연/오버헤드 트레이드오프를 확인해야 함.
+   - BRPL_QUEUE_WEIGHT 적정 값이 확정되지 않음
+   - 안정화 후 단계적 스윕 필요
 
-## 다음 단계 후보
+## 해결/완화된 이슈 (stage1 기준)
 
-1. BRPL에서 DAO/route 유지 실패 원인 로그 강화
-2. sender 송신 조건을 원복하고 reachable 정상화 확인
-3. BRPL OF의 parent 유지 로직 재설계(ETX/penalty 균형)
-4. `summary.csv` 중복 조건 정리 후 재분석
+1. BRPL에서 PDR이 0으로 집계
+   - stage1 재실행에서 최신 24개 조합 PDR=1.0 확인
+
+2. reachable=false로 송신 차단
+   - stage1 재실행에서 RX가 정상 발생해 차단 상태는 미재현
+   - 추가로 reachable 자체를 직접 검증하는 로그 확인은 필요
+
+3. BRPL 부모 선택/유지 불안정
+   - `parent switch` 로그는 `(NULL IP addr) -> ...` 형태의 초기 선택만 확인
+   - 비-NULL 부모 간 전환 로그는 확인되지 않음 (불안정 증상 미재현)
+
+## 테스트 실행 결과
+
+### analyze_results.py 실행 (2025-01-15)
+
+- `delay_ms` 컬럼 없음으로 `KeyError`
+- `seaborn` 누락으로 초기 실행 실패 (의존성 보완 완료)
+- Matplotlib 캐시 경로 권한 문제 → `MPLCONFIGDIR=/tmp/matplotlib` 필요
+
+### BRPL stage1 재실행 (2025-01-15)
+
+- 범위: N=5~50, seed=1~3, sr=1.0, ir=1.0, si=10
+- 최신 24개 조합 기준:
+  - PDR=1.0
+  - avg_delay_ms: 319.39 ~ 432.73
+  - p95_delay_ms: 484.38 ~ 1296.88
+  - rx_count/tx_expected: 13 ~ 18
+- `summary.csv` 중복 행 누적 발생
+
+## 다음 단계
+
+1. `analyze_results.py`를 raw CSV 포맷(`delay_ticks`)에 맞게 수정
+2. `summary.csv` 중복 제거 기준 정의 후 정리
+3. BRPL OF의 혼잡 반영/패널티 계수 스윕

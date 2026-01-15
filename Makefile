@@ -1,6 +1,7 @@
 CONTIKI ?= $(abspath ../external/contiki-ng)
 
 CONTIKI_PROJECT = receiver_root sender
+PROJECTDIRS += motes
 BRPL_OF :=
 ifneq (,$(findstring BRPL_MODE=1,$(DEFINES)))
 BRPL_OF := 1

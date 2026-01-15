@@ -6,13 +6,13 @@
 
 ```bash
 # Stage 1: N 스윕
-./run_sweep_stage1.sh
+./scripts/run_sweep_stage1.sh
 
 # Stage 2: 링크 품질 스윕 (stage 1에서 N 값 2개 자동 선택)
-./run_sweep_stage2.sh
+./scripts/run_sweep_stage2.sh
 
 # Stage 3: 트래픽 스윕 (stage 2에서 knee 조건 자동 선택)
-./run_sweep_stage3.sh
+./scripts/run_sweep_stage3.sh
 ```
 
 ## 시뮬레이션 규칙 (재현성)
@@ -20,7 +20,7 @@
 * 총 시간: **360s** (WARMUP=60s, MEASURE=300s)
 * 지표는 MEASURE 구간만 사용
 * 각 실행은 **seed**를 받아 동일 실행 재현 가능
-* 로그는 `receiver_root.c`에서 출력하는 고정 CSV 포맷을 파싱
+* 로그는 `motes/receiver_root.c`에서 출력하는 고정 CSV 포맷을 파싱
 
 ## 출력 구조
 
@@ -33,7 +33,16 @@ results/
 
 * `raw/...csv`는 해당 실행의 RX CSV 라인만 포함
 * `summary.csv`는 실행별 지표
-* `thresholds.csv`는 `tools/python/find_thresholds.py`가 자동 생성
+* `thresholds.csv`는 `tools/R/find_thresholds.R`가 자동 생성
+
+## 코드/스크립트 구조
+
+```
+motes/          # Cooja mote 앱 (receiver_root, sender)
+scripts/        # 실행 스크립트 (run_experiment, run_sweep*)
+tools/python/   # 파이프라인/파서 등 보조 스크립트
+tools/R/        # 통계/시각화/검정 스크립트
+```
 
 ## 실행별 요약 컬럼
 
@@ -86,7 +95,7 @@ Stage 2의 **RPL classic** 결과에서 **knee** 조건 선택:
 
 ## 붕괴 시점 탐지
 
-`tools/python/find_thresholds.py`는 `summary.csv`를 조건별로 집계해 모드/스테이지별 첫 붕괴 지점을 찾습니다:
+`tools/R/find_thresholds.R`는 `summary.csv`를 조건별로 집계해 모드/스테이지별 첫 붕괴 지점을 찾습니다:
 
 * `PDR < 0.90` **또는** `avg_delay_ms > 5000`
 * **또는** 제어 오버헤드 급증 (`DIO+DAO`가 이전 조건의 2배 이상일 때)
@@ -97,10 +106,14 @@ Stage 2의 **RPL classic** 결과에서 **knee** 조건 선택:
 * Stage 2: success_ratio ↓ 다음 interference_ratio ↓
 * Stage 3: send_interval_s ↓
 
+## 분석/시각화
+
+`tools/R/analyze_results.R`는 `summary.csv`를 기반으로 단계별 요약과 Stage 1 표/그래프를 생성합니다.
+
 ## 단일 실험 실행
 
 ```bash
-./run_experiment.sh \
+./scripts/run_experiment.sh \
   --mode rpl-classic \
   --stage stage1 \
   --n-senders 20 \

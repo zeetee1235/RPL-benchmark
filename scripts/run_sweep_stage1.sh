@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "$0")" && pwd)"
+ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 
 STAGE="stage1"
 MODE_LIST=("rpl-classic" "brpl")
@@ -22,7 +22,7 @@ for mode in "${MODE_LIST[@]}"; do
       count=$((count + 1))
       printf "[stage1 %s/%s] mode=%s n=%s seed=%s sr=%s ir=%s si=%s @ %s\n" \
         "$count" "$total" "$mode" "$n" "$seed" "$SUCCESS_RATIO" "$INTERFERENCE_RATIO" "$SEND_INTERVAL_S" "$(date '+%F %T')"
-      "$ROOT_DIR/run_experiment.sh" \
+      "$ROOT_DIR/scripts/run_experiment.sh" \
         --mode "$mode" \
         --stage "$STAGE" \
         --n-senders "$n" \
@@ -34,7 +34,7 @@ for mode in "${MODE_LIST[@]}"; do
   done
  done
 
-python3 "$ROOT_DIR/tools/python/find_thresholds.py" \
+Rscript "$ROOT_DIR/tools/R/find_thresholds.R" \
   --summary "$ROOT_DIR/results/summary.csv" \
   --out "$ROOT_DIR/results/thresholds.csv" || true
 

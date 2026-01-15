@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "$0")" && pwd)"
+ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 
 MODE_LIST=("rpl-lite" "rpl-classic" "brpl")
 SENDER_LIST=(10 20 30 40 50 60)
@@ -16,7 +16,7 @@ export SUCCESS_RX=0.7
 
 for mode in "${MODE_LIST[@]}"; do
   for n in "${SENDER_LIST[@]}"; do
-    "$ROOT_DIR/run_experiment.sh" "$mode" "$n"
+    "$ROOT_DIR/scripts/run_experiment.sh" "$mode" "$n"
   done
 done
 

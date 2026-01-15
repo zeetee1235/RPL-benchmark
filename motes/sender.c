@@ -152,7 +152,7 @@ PROCESS_THREAD(sender_process, ev, data)
       simple_udp_sendto(&udp_conn, buf, strlen(buf), &root_ipaddr);
       LOG_INFO("TX seq=%lu t=%lu\n", (unsigned long)seq, (unsigned long)t_send_root);
     } else {
-      LOG_INFO("not reachable yet\n");
+      LOG_INFO("not joined yet\n");
     }
   }
 

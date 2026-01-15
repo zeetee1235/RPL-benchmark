@@ -9,6 +9,8 @@ extern rpl_of_t rpl_brpl;
 /* Use BRPL-inspired objective function when BRPL_MODE is enabled. */
 #define RPL_CONF_SUPPORTED_OFS {&rpl_brpl}
 #define RPL_CONF_OF_OCP RPL_OCP_MRHOF
+/* Avoid blocking on DAO-ACK in BRPL experiments; mark reachable on DAO send. */
+#define RPL_CONF_WITH_DAO_ACK 0
 #endif
 
 /* Keep logs readable in Cooja for experiment parsing. */

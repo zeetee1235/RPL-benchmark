@@ -136,7 +136,7 @@ def main() -> int:
       org.contikios.cooja.contikimote.ContikiMoteType
       <identifier>root</identifier>
       <description>Receiver Root</description>
-      <source>{root_dir}/receiver_root.c</source>
+      <source>{root_dir}/motes/receiver_root.c</source>
       <commands>make -C {root_dir} receiver_root.cooja TARGET=cooja MAKE_ROUTING={args.make_routing} DEFINES={defines_arg}</commands>
       <moteinterface>org.contikios.cooja.interfaces.Position</moteinterface>
       <moteinterface>org.contikios.cooja.interfaces.Battery</moteinterface>
@@ -160,7 +160,7 @@ def main() -> int:
       org.contikios.cooja.contikimote.ContikiMoteType
       <identifier>sender</identifier>
       <description>Sensor Sender</description>
-      <source>{root_dir}/sender.c</source>
+      <source>{root_dir}/motes/sender.c</source>
       <commands>make -C {root_dir} sender.cooja TARGET=cooja MAKE_ROUTING={args.make_routing} DEFINES={defines_arg}</commands>
       <moteinterface>org.contikios.cooja.interfaces.Position</moteinterface>
       <moteinterface>org.contikios.cooja.interfaces.Battery</moteinterface>

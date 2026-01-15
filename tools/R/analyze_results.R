@@ -113,6 +113,96 @@ names(runs_by_mode)[names(runs_by_mode) == "seed"] <- "runs"
 comp <- merge(comp, runs_by_mode, by = c("mode","stage"))
 write.csv(comp, file.path(analysis_dir, "mode_stage_comparison.csv"), row.names = FALSE)
 
+docs_dir <- file.path(root_dir, "docs")
+tables_dir <- file.path(docs_dir, "tables")
+figures_dir <- file.path(docs_dir, "figures")
+if (!dir.exists(tables_dir)) dir.create(tables_dir, recursive = TRUE)
+if (!dir.exists(figures_dir)) dir.create(figures_dir, recursive = TRUE)
+
+stage1_summary <- summary[summary$stage == "stage1", , drop = FALSE]
+if (nrow(stage1_summary) > 0) {
+  stage1_summary$pdr_pct <- stage1_summary$pdr * 100
+  agg_stage1 <- aggregate(
+    cbind(pdr_pct, avg_delay_ms) ~ mode + n_senders,
+    data = stage1_summary,
+    FUN = function(x) c(mean = mean(x, na.rm = TRUE), sd = sd(x, na.rm = TRUE))
+  )
+  agg_stage1 <- do.call(data.frame, agg_stage1)
+  names(agg_stage1) <- c(
+    "mode", "n_senders",
+    "mean_pdr", "sd_pdr",
+    "mean_delay", "sd_delay"
+  )
+  runs_stage1 <- aggregate(seed ~ mode + n_senders, data = stage1_summary, FUN = length)
+  names(runs_stage1)[names(runs_stage1) == "seed"] <- "n_runs"
+  agg_stage1 <- merge(agg_stage1, runs_stage1, by = c("mode", "n_senders"))
+
+  tex_path <- file.path(tables_dir, "stage1_summary.tex")
+  lines <- c(
+    "\\begin{table}[H]",
+    "\\centering",
+    "\\caption{Performance Comparison of RPL Variants (Stage 1)}",
+    "\\label{tab:stage1_results}",
+    "\\begin{tabular}{llrrr}",
+    "\\toprule",
+    "Mode & N Senders & PDR (\\%) & Delay (ms) & Runs \\\\",
+    "\\midrule"
+  )
+  mode_order <- c("rpl-classic", "rpl-lite", "brpl")
+  for (mode in mode_order) {
+    mode_rows <- agg_stage1[agg_stage1$mode == mode, , drop = FALSE]
+    if (nrow(mode_rows) == 0) next
+    mode_rows <- mode_rows[order(mode_rows$n_senders), ]
+    for (i in seq_len(nrow(mode_rows))) {
+      row <- mode_rows[i, ]
+      pdr_str <- sprintf("%.2f $\\\\pm$ %.2f", row$mean_pdr, row$sd_pdr)
+      delay_str <- sprintf("%.2f $\\\\pm$ %.2f", row$mean_delay, row$sd_delay)
+      lines <- c(lines, sprintf(
+        "%s & %d & %s & %s & %d \\\\",
+        row$mode, row$n_senders, pdr_str, delay_str, row$n_runs
+      ))
+    }
+  }
+  lines <- c(lines, "\\bottomrule", "\\end{tabular}", "\\end{table}")
+  writeLines(lines, tex_path)
+
+  plot_with_error <- function(df, y_mean, y_sd, ylab, title, out_path) {
+    pdf(out_path)
+    mode_order <- c("rpl-classic", "rpl-lite", "brpl")
+    colors <- c("rpl-classic" = "#1b9e77", "rpl-lite" = "#d95f02", "brpl" = "#7570b3")
+    plot(NULL,
+      xlim = range(df$n_senders, na.rm = TRUE),
+      ylim = c(0, max(df[[y_mean]] + df[[y_sd]], na.rm = TRUE) * 1.1),
+      xlab = "Number of Senders",
+      ylab = ylab,
+      main = title
+    )
+    for (mode in mode_order) {
+      mode_rows <- df[df$mode == mode, , drop = FALSE]
+      if (nrow(mode_rows) == 0) next
+      mode_rows <- mode_rows[order(mode_rows$n_senders), ]
+      x <- mode_rows$n_senders
+      y <- mode_rows[[y_mean]]
+      ysd <- mode_rows[[y_sd]]
+      lines(x, y, type = "b", pch = 19, col = colors[mode])
+      segments(x, y - ysd, x, y + ysd, col = colors[mode])
+    }
+    legend("topleft", legend = mode_order, col = colors[mode_order], lty = 1, pch = 19, bty = "n")
+    dev.off()
+  }
+
+  plot_with_error(
+    agg_stage1, "mean_pdr", "sd_pdr",
+    "PDR (%)", "Packet Delivery Ratio by Number of Senders",
+    file.path(figures_dir, "stage1_pdr.pdf")
+  )
+  plot_with_error(
+    agg_stage1, "mean_delay", "sd_delay",
+    "Delay (ms)", "Average Delay by Number of Senders",
+    file.path(figures_dir, "stage1_delay.pdf")
+  )
+}
+
 cat("Analysis complete.\n")
 cat("Outputs:\n")
 cat(" -", file.path(analysis_dir, "collapse_stage1.csv"), "\n")

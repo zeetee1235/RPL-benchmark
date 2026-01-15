@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "$0")" && pwd)"
+ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 CONTIKI="${CONTIKI:-$ROOT_DIR/../external/contiki-ng}"
 COOJA_JAR="$CONTIKI/tools/cooja/dist/cooja.jar"
 RESULTS_DIR="$ROOT_DIR/results"
@@ -195,7 +195,7 @@ python3 "$ROOT_DIR/tools/python/log_parser.py" \
   --csc-path "$CSC_PATH" \
   --out "$SUMMARY_PATH"
 
-python3 "$ROOT_DIR/tools/python/find_thresholds.py" \
+Rscript "$ROOT_DIR/tools/R/find_thresholds.R" \
   --summary "$SUMMARY_PATH" \
   --out "$RESULTS_DIR/thresholds.csv" || true
 
