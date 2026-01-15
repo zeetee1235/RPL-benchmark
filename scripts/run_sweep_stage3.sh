@@ -12,9 +12,11 @@ fi
 read -r SELECTED_N SELECTED_SUCCESS SELECTED_INTERFERENCE < <(
   python3 - <<'PY'
 import csv
+import os
 from collections import defaultdict
 
-summary_path = "results/summary.csv"
+root_dir = os.environ.get("ROOT_DIR", ".")
+summary_path = os.path.join(root_dir, "results", "summary.csv")
 
 rows = []
 with open(summary_path, newline="", encoding="utf-8") as handle:

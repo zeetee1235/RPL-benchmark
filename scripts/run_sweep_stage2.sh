@@ -12,9 +12,11 @@ fi
 read -r STABLE_N MARGINAL_N < <(
   python3 - <<'PY'
 import csv
+import os
 from collections import defaultdict
 
-summary_path = "results/summary.csv"
+root_dir = os.environ.get("ROOT_DIR", ".")
+summary_path = os.path.join(root_dir, "results", "summary.csv")
 N_LIST = [5, 10, 15, 20, 25, 30, 40, 50]
 
 rows = []
