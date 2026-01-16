@@ -2,6 +2,10 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+SUMMARY="$ROOT_DIR/results/summary.csv"
+if [ -f "$SUMMARY" ]; then
+  mv "$SUMMARY" "$SUMMARY.bak.$(date '+%Y%m%d_%H%M%S')"
+fi
 
 STAGE="stage1"
 MODE_LIST=("rpl-lite" "brpl")

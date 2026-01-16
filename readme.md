@@ -50,13 +50,15 @@ tools/R/        # 통계/시각화/검정 스크립트
 
 ```
 mode,stage,n_senders,seed,success_ratio,interference_ratio,send_interval_s,
-rx_count,tx_expected,pdr,avg_delay_ms,p95_delay_ms,dio_count,dao_count,
-duration_s,warmup_s,measure_s,log_path,csc_path
+rx_count,tx_expected,pdr,avg_rtt_ms,p95_rtt_ms,avg_delay_ms,p95_delay_ms,invalid_run,
+dio_count,dao_count,duration_s,warmup_s,measure_s,log_path,csc_path
 ```
 
 참고:
 * `dio_count`/`dao_count`는 전체 Cooja 로그에서 best-effort로 집계
-* 지연 값은 `CLOCK_SECOND`(기본 128)으로 변환
+* 지연/RTT 값은 `CLOCK_SECOND`(기본 1000)으로 변환
+* `avg_delay_ms`/`p95_delay_ms`는 RTT 값과 동일하게 기록
+* `invalid_run=1`은 RTT 로그 부족/0값으로 판단된 실패 run
 
 ## 단계 정의
 
@@ -69,7 +71,7 @@ duration_s,warmup_s,measure_s,log_path,csc_path
 
 ### Stage 2: 링크 품질 스윕
 
-Stage 1의 **RPL classic** 결과로부터 N 값 2개를 자동 선택:
+Stage 1의 **rpl-lite** 결과로부터 N 값 2개를 자동 선택:
 
 * **Stable N:** `PDR >= 0.95`를 만족하는 가장 큰 N
 * **Marginal N:** `0.90 <= PDR < 0.95`를 만족하는 가장 큰 N
@@ -83,7 +85,7 @@ Stage 1의 **RPL classic** 결과로부터 N 값 2개를 자동 선택:
 
 ### Stage 3: 트래픽 스윕
 
-Stage 2의 **RPL classic** 결과에서 **knee** 조건 선택:
+Stage 2의 **rpl-lite** 결과에서 **knee** 조건 선택:
 
 * `0.85 <= PDR <= 0.92`인 조건이 있으면 **0.90에 가장 가까운** 조건 선택
 * 없으면 PDR이 **0.90에 가장 가까운** 조건 선택
@@ -92,6 +94,17 @@ Stage 2의 **RPL classic** 결과에서 **knee** 조건 선택:
 
 * `SEND_INTERVAL_S ∈ {20,10,5,2}` (내림차순)
 * Seeds `{1,2,3}`, Modes `{rpl-lite, brpl}`
+
+## Troubleshooting / Known Pitfalls
+
+- Cooja 로드 실패 (`mtype*.cooja` not found)
+  - 해결: `motes/build/cooja -> ../../build/cooja` 심볼릭 링크 추가
+- Stage2/3 스윕에서 `summary.csv` 경로 오류
+  - 해결: `ROOT_DIR`를 export하고 Python 블록에서 절대 경로 사용
+- RTT 로그가 안 찍힘 (`CSV,RTT` 없음)
+  - 해결: root_start 반환값 처리 수정, SR 루트 노드 등록/경로 갱신, `CLOCK_SECOND=1000` 확인
+- 결과 중복/오염
+  - 해결: `log_parser.py` 동일 키 덮어쓰기, `find_thresholds.R` 중복 제거
 
 ## 붕괴 시점 탐지
 

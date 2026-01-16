@@ -72,6 +72,10 @@ echo_rx_callback(struct simple_udp_connection *c,
   uint32_t t_ack = (uint32_t)clock_time();
   uint32_t rtt_ticks = t_ack - t0;
 
+  LOG_INFO("echo rx seq=%lu rtt_ticks=%lu len=%u\n",
+           (unsigned long)seq,
+           (unsigned long)rtt_ticks,
+           (unsigned)datalen);
   printf("CSV,RTT,%lu,%lu,%lu,%lu,%u\n",
          (unsigned long)seq,
          (unsigned long)t0,

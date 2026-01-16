@@ -3,6 +3,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 SUMMARY="$ROOT_DIR/results/summary.csv"
+export ROOT_DIR
 
 if [ ! -f "$SUMMARY" ]; then
   echo "summary.csv not found. Run stage2 first." >&2

@@ -15,6 +15,7 @@
 #include "net/ipv6/uiplib.h"
 #include "net/ipv6/uip-ds6.h"
 #include "net/routing/routing.h"
+#include "net/ipv6/uip-sr.h"
 #include "net/ipv6/simple-udp.h"
 #include "net/ipv6/uip-nd6.h"
 
@@ -26,18 +27,25 @@
 #define LOG_LEVEL LOG_LEVEL_INFO
 
 #define UDP_PORT 8765
+#define ROOT_START_RETRY_SECONDS 2
+#define ROOT_START_RETRY (ROOT_START_RETRY_SECONDS * CLOCK_SECOND)
 static struct simple_udp_connection udp_conn;
+static struct etimer root_timer;
+static uip_ipaddr_t root_ipaddr;
+static uint8_t root_started;
 
 
 static void
 set_root_address_and_prefix(void)
 {
-  uip_ipaddr_t ipaddr;
   uip_ipaddr_t prefix;
 
   /* Root global address: aaaa::1 */
-  uip_ip6addr(&ipaddr, 0xaaaa,0,0,0,0,0,0,1);
-  uip_ds6_addr_add(&ipaddr, 0, ADDR_MANUAL);
+  uip_ip6addr(&root_ipaddr, 0xaaaa,0,0,0,0,0,0,1);
+  uip_ds6_addr_t *addr = uip_ds6_addr_add(&root_ipaddr, 0, ADDR_MANUAL);
+  if(addr != NULL) {
+    addr->state = ADDR_PREFERRED;
+  }
 
   /* Prefix: aaaa::/64 */
   uip_ip6addr(&prefix, 0xaaaa,0,0,0,0,0,0,0);
@@ -48,8 +56,27 @@ set_root_address_and_prefix(void)
                      UIP_ND6_INFINITE_LIFETIME);
 
   LOG_INFO("root ip = ");
-  LOG_INFO_6ADDR(&ipaddr);
+  LOG_INFO_6ADDR(&root_ipaddr);
   LOG_INFO_("\n");
+}
+
+static int
+root_start_if_ready(void)
+{
+  uip_ds6_addr_t *addr = uip_ds6_addr_lookup(&root_ipaddr);
+  if(addr == NULL || addr->state != ADDR_PREFERRED) {
+    return 0;
+  }
+  if(NETSTACK_ROUTING.root_start() == 0) {
+    LOG_INFO("root_start() ok\n");
+    if(uip_sr_update_node(NULL, &root_ipaddr, NULL, UIP_SR_INFINITE_LIFETIME) == NULL) {
+      LOG_ERR("failed to register SR root node\n");
+    }
+    root_started = 1;
+    return 1;
+  }
+  LOG_ERR("root_start() failed\n");
+  return 0;
 }
 
 static int
@@ -88,8 +115,13 @@ udp_rx_callback(struct simple_udp_connection *c,
   int ok = parse_payload(data, datalen, &seq, &t0);
   if(ok) {
     char buf[64];
+    uip_ipaddr_t reply_addr;
+    uip_ipaddr_copy(&reply_addr, sender_addr);
+    if(uip_sr_update_node(NULL, &reply_addr, &root_ipaddr, UIP_SR_INFINITE_LIFETIME) == NULL) {
+      LOG_WARN("failed to update SR route for sender\n");
+    }
     printf("CSV,RX,");
-    uiplib_ipaddr_print(sender_addr);
+    uiplib_ipaddr_print(&reply_addr);
     printf(",%lu,%lu,%u\n",
            (unsigned long)seq,
            (unsigned long)t_recv,
@@ -97,7 +129,10 @@ udp_rx_callback(struct simple_udp_connection *c,
 
     snprintf(buf, sizeof(buf), "seq=%lu t0=%lu",
              (unsigned long)seq, (unsigned long)t0);
-    simple_udp_sendto(&udp_conn, buf, strlen(buf), sender_addr);
+    simple_udp_sendto(&udp_conn, buf, strlen(buf), &reply_addr);
+    LOG_INFO("echo sent to ");
+    LOG_INFO_6ADDR(&reply_addr);
+    LOG_INFO_(" seq=%lu\n", (unsigned long)seq);
   } else {
     LOG_WARN("payload parse failed\n");
   }
@@ -116,11 +151,8 @@ PROCESS_THREAD(receiver_root_process, ev, data)
 
   /* Establish RPL root and prefix so sensors can auto-configure. */
   set_root_address_and_prefix();
-  if(!NETSTACK_ROUTING.root_start()) {
-    LOG_ERR("root_start() failed\n");
-  } else {
-    LOG_INFO("root_start() ok\n");
-  }
+  root_started = 0;
+  etimer_set(&root_timer, ROOT_START_RETRY);
 
   /* UDP receiver for sensor traffic. */
   simple_udp_register(&udp_conn, UDP_PORT, NULL, UDP_PORT, udp_rx_callback);
@@ -128,6 +160,11 @@ PROCESS_THREAD(receiver_root_process, ev, data)
 
   while(1) {
     PROCESS_WAIT_EVENT();
+    if(!root_started && etimer_expired(&root_timer)) {
+      if(!root_start_if_ready()) {
+        etimer_reset(&root_timer);
+      }
+    }
   }
 
   PROCESS_END();
