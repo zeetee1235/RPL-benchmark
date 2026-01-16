@@ -209,6 +209,6 @@ thresholds <- lapply(groups, function(df) {
 })
 
 thresholds_df <- do.call(rbind, thresholds)
-write.csv(thresholds_df, out_path, row.names = FALSE, quote = FALSE)
+write.csv(thresholds_df, out_path, row.names = FALSE, quote = TRUE)
 
 cat("Thresholds written to:", out_path, "\n")
