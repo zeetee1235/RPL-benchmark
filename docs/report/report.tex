@@ -38,6 +38,9 @@
 \end{itemize}
 
 \section*{1단계 실험 결과}
+\paragraph{실험 설계}
+송신 노드 수(N)를 증가시키며 링크 품질은 고정(성공/간섭 비율 1.0, 간격 10s)한다.
+각 N은 seed 1--3으로 반복 수행하며, rpl-lite와 brpl을 동일 조건에서 비교한다.
 \begin{figure}[H]
   \centering
   \includegraphics[width=0.7\textwidth]{figures/stage1_pdr.pdf}
@@ -45,6 +48,12 @@
 \end{figure}
 
 \section*{2단계 및 3단계 실험 결과}
+\paragraph{2단계 설계}
+Stage 1 rpl-lite 결과에서 안정(Stable)과 경계(Marginal) N을 자동 선택한 뒤,
+링크 품질 파라미터(success/interference ratio)를 스윕하여 붕괴 조건을 탐색한다.
+\paragraph{3단계 설계}
+Stage 2 rpl-lite 결과에서 knee 조건을 선택하고, 트래픽 부하를 높이기 위해
+send\_interval\_s를 단계적으로 감소시킨다.
 \begin{figure}[H]
   \centering
   \begin{minipage}{0.48\textwidth}
