@@ -1,0 +1,69 @@
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage{hyperref}
+\usepackage{kotex}
+\usepackage{lmodern}
+
+\title{RPL-lite와 BRPL 성능 비교 실험 보고서\\
+(Headless Cooja 시뮬레이션)}
+\date{2026년 1월 16일}
+
+\begin{document}
+\maketitle
+
+\section*{주요 연구 결과}
+\begin{itemize}
+  \item Headless Cooja 시뮬레이션 파이프라인이 안정적으로 동작하며, RTT 로그가 일관되게 수집되었습니다.
+  \item 본 실험에서 rpl-lite는 2단계 및 3단계에서 성능 저하(collapse)를 보인 반면, BRPL은 아직 성능 저하가 관찰되지 않았습니다.
+  \item 현재 설정된 스트레스 조건이 충분히 강하지 않아 최종 결론을 도출하기에는 제한적이며, BRPL에 대한 추가 검증이 필요합니다.
+  \item 더 높은 수준의 스트레스 조건이 필요하나, 실행 시간이 병목 현상을 보이고 있어 최적화가 필요합니다.
+  \item BRPL이 더 안정적일 가능성이 있으나, 현재 조건이 충분히 가혹하지 않거나 OF(Objective Function)의 혼잡도 계산이 제한적일 수 있습니다.
+\end{itemize}
+
+\section*{요약 표}
+\input{tables/thresholds_table.tex}
+\input{tables/stage_mean_table.tex}
+
+\section*{1단계 실험 결과}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.7\textwidth]{figures/stage1_pdr.pdf}
+  \caption{1단계: 송신 노드 수에 따른 PDR 변화 (rpl-lite 대 brpl 비교)}
+\end{figure}
+
+\section*{2단계 및 3단계 실험 결과}
+\begin{figure}[H]
+  \centering
+  \begin{minipage}{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{figures/stage2_rtt_at_collapse.pdf}
+    \caption{2단계: 임계 조건에서의 RTT 비교}
+  \end{minipage}
+  \hfill
+  \begin{minipage}{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{figures/stage3_rtt_at_collapse.pdf}
+    \caption{3단계: 임계 조건에서의 RTT 비교}
+  \end{minipage}
+\end{figure}
+
+\section*{제어 오버헤드와 성능의 관계}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{figures/overhead_vs_performance.pdf}
+  \caption{제어 오버헤드(DIO+DAO) 대 PDR 및 RTT의 관계}
+\end{figure}
+
+\section*{파라미터 커버리지 분석}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{figures/stage2_coverage_heatmap.pdf}
+  \caption{2단계 파라미터 커버리지 히트맵}
+\end{figure}
+
+\end{document}
