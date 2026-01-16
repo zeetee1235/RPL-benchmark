@@ -16,7 +16,7 @@
 \begin{document}
 \maketitle
 
-\section*{주요 연구 결과}
+\section*{주요 실험 결과}
 \begin{itemize}
   \item Headless Cooja 시뮬레이션 파이프라인이 안정적으로 동작하며, RTT 로그가 일관되게 수집되었습니다.
   \item 본 실험에서 rpl-lite는 2단계 및 3단계에서 성능 저하(collapse)를 보인 반면, BRPL은 아직 성능 저하가 관찰되지 않았습니다.
@@ -28,6 +28,14 @@
 \section*{요약 표}
 \input{tables/thresholds_table.tex}
 \input{tables/stage_mean_table.tex}
+
+\section*{붕괴 시점 탐지 기준}
+\begin{itemize}
+  \item 단일 run 붕괴: \texttt{PDR < 0.90} 또는 \texttt{avg\_delay\_ms > 5000}(RTT 기반), 또는 \texttt{invalid\_run=1}.
+  \item \texttt{p95\_rtt\_ms}가 존재하면 \texttt{p95\_rtt\_ms > 8000} 기준을 우선 적용.
+  \item 조건별 붕괴: seed 다수결 기준(\texttt{collapse\_frac} $\ge$ 2/3).
+  \item 스테이지 정렬 규칙에 따라 최초로 붕괴가 성립한 조건을 붕괴 시점으로 기록.
+\end{itemize}
 
 \section*{1단계 실험 결과}
 \begin{figure}[H]
